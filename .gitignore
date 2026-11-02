@@ -1,0 +1,31 @@
+# Môi trường ảo
+.venv/
+venv/
+env/
+
+# Dữ liệu (nặng, tải lại từ Kaggle)
+archive/
+data/
+*.zip
+
+# Kết quả / checkpoint
+outputs/
+checkpoints/
+runs/
+*.pth
+*.pt
+*.ckpt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
