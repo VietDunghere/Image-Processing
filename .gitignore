@@ -7,7 +7,7 @@ env/
 archive/
 data/
 *.zip
-
+tailieu/
 # Kết quả / checkpoint
 outputs/
 checkpoints/
