@@ -43,6 +43,8 @@ PROBLEMS = {
 }
 CFG2FLAG = {c: v[0] for v in PROBLEMS.values() for c in v[3]}
 CONFIGS = [c for v in PROBLEMS.values() for c in v[3]]
+COMBOS = ["vig_fill+flat_L_s60_cond"]
+CFG2FLAG["vig_fill+flat_L_s60_cond"] = ["F_vignette", "F_uneven_illum"]   # nhóm = ảnh có ÍT NHẤT 1 trong 2 cờ
 
 
 def savefig(fig, name):
@@ -122,9 +124,9 @@ def subgroup(split, n_boot=1000):
     base_c = np.stack([B[s].loc[ids, "correct"].values for s in SEEDS]).astype(float)
     base_sd = {}
     rows = []
-    for cfg in CONFIGS:
+    for cfg in CONFIGS + COMBOS:
         flag = CFG2FLAG[cfg]
-        g = fl.loc[ids, flag].values.astype(bool)
+        g = (fl.loc[ids, flag].any(axis=1) if isinstance(flag, list) else fl.loc[ids, flag]).values.astype(bool)
         A = _preds(cfg, split)
         cc = np.stack([A[s].loc[ids, "correct"].values for s in SEEDS]).astype(float)
         d = cc - base_c                                                     # (3, N)
@@ -138,7 +140,7 @@ def subgroup(split, n_boot=1000):
             boots.append((a, b, a - b))
         boots = np.array(boots)
         lo, hi = np.percentile(boots, 2.5, 0), np.percentile(boots, 97.5, 0)
-        sd = base_sd.setdefault(flag, base_c[:, g].mean(1).std(ddof=1))
+        sd = base_sd.setdefault(str(flag), base_c[:, g].mean(1).std(ddof=1))
         wc = [int(((base_c[i] == 0) & (cc[i] == 1) & g).sum()) for i in range(3)]
         cw = [int(((base_c[i] == 1) & (cc[i] == 0) & g).sum()) for i in range(3)]
         sign = lambda v: f"{(v > 0).sum()}+/{(v < 0).sum()}-"
@@ -200,7 +202,7 @@ if __name__ == "__main__":
     print("(A) đo trên ảnh ...", flush=True)
     print(image_level().to_string())
     for split in ("val", "test"):
-        T = C.comparison_table(CONFIGS, split)
+        T = C.comparison_table(CONFIGS + COMBOS, split)
         T.to_csv(OUT / f"comparison_{split}.csv", index=False)
     T_val, T_test = (pd.read_csv(OUT / f"comparison_{s}.csv") for s in ("val", "test"))
     cols = ["config", "macro_f1_mean", "macro_f1_std", "macro_f1_delta", "macro_f1_delta_ci_lo",
