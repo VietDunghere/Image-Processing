@@ -23,11 +23,11 @@ Hướng dẫn cho Claude Code khi làm việc trong repo này. Viết/trả l�
 - **Không rò rỉ dữ liệu:** phép xử lý có tham số học từ dữ liệu (ví dụ thống kê chuẩn hóa) chỉ được fit trên train. Test set không dùng để chọn phương pháp/siêu tham số — dùng validation tách từ train (vẫn theo `lesion_id`).
 - Xử lý ảnh chương 3 áp dụng **trước** `ToTensor/Normalize` (trên ảnh uint8/PIL/ndarray), và phải áp dụng **giống nhau** cho train và test (khác với augmentation ngẫu nhiên chỉ dùng cho train).
 
-## Tài liệu tham chiếu (thư mục `Document/`)
+## Tài liệu tham chiếu (thư mục `tailieu/`, không commit)
 
 - `DoAn_XuLyAnh.pdf`: yêu cầu của giảng viên (Lựa chọn 2 – Dự án thực tế, báo cáo 4–10 trang, hạn nộp 11/11/2026).
-- `Evaluating the Impact of ... .md`: kế hoạch pipeline 2.1–2.8 của nhóm.
-- `1_XLA1…8_XLA8*.pdf`: slide các chương của học phần.
+- `ke_hoach_nhom.md`: kế hoạch pipeline 2.1–2.8 và phân công của nhóm.
+- `ch1_…pdf` đến `ch8_…pdf`: slide các chương của học phần.
 
 ## Dữ liệu
 
@@ -37,18 +37,28 @@ Hướng dẫn cho Claude Code khi làm việc trong repo này. Viết/trả l�
   - `hmnist_*.csv`: bản ảnh nhỏ dạng bảng của Kaggle — **không dùng** cho đề tài này (mất chi tiết ảnh).
 - 7 lớp (`dx`): `akiec, bcc, bkl, df, mel, nv, vasc`; mã hóa theo `sorted(df["dx"].unique())`. Lớp `nv` chiếm đa số.
 - Một `lesion_id` có thể có nhiều ảnh → **bắt buộc chia theo nhóm `lesion_id`** (`StratifiedGroupKFold`, stratify theo `label`) để tránh rò rỉ giữa train/test.
-- Split đã lưu ở `outputs/splits/{train,test}.csv` (cột `image_id, lesion_id, dx, label, path`). **Dùng lại các file này** cho mọi thí nghiệm để so sánh công bằng; không tạo split mới trừ khi được yêu cầu.
+- Split đã lưu ở `outputs/splits/{train_fit,val,test}.csv` (`train` = `train_fit` + `val`; cột `image_id, lesion_id, dx, label, path`). **Dùng lại các file này** cho mọi thí nghiệm để so sánh công bằng; không tạo split mới trừ khi được yêu cầu.
 
 ## Cấu trúc repo
 
-```
-ham10000_resnet18.ipynb   # Chuẩn bị dữ liệu, kiểm tra, split, Dataset/DataLoader, khởi tạo ResNet-18 (chưa train)
-requirements.txt          # torch 2.8.0 (CUDA 12.6), torchvision, sklearn, pandas, ...
-archive/                  # dữ liệu gốc (không commit)
-outputs/                  # split, kết quả, checkpoint (không commit)
-```
+**Bản đồ chi tiết ở `AGENTS.md`** (từng notebook làm gì, script, `outputs/`, bẫy cần tránh, lệnh hay dùng). Đọc file đó trước khi mở notebook; notebook rất nặng (tới 6,7 MB). Việc đang dở: `reports/_handoff_2.5c.md`.
 
-Khi thêm code mới: ưu tiên tách module/notebook theo vai trò (xử lý ảnh, train, đánh giá) thay vì nhồi vào một notebook; kết quả thí nghiệm lưu vào `outputs/` (CSV/JSON/ảnh) để báo cáo tái tạo được.
+Quy ước tên: tiền tố là số mục kế hoạch; notebook và báo cáo cùng phần trùng tên, chỉ khác đuôi; tiền tố `_` là ghi chú làm việc. Notebook phải ở gốc repo.
+
+| Mục | Notebook (gốc repo) | Báo cáo (`reports/`) | Code chính | Trạng thái |
+|---|---|---|---|---|
+| 1 | – | `1_gioi_thieu.md` | – | Có |
+| 2.1 | – | `2.1_du_lieu.md` | `src/report/data_tables.py` | Xong |
+| 2.2 EDA | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/` | Xong, còn `TODO` liên hệ lỗi CNN |
+| 2.3 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | Xong |
+| 2.4 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.4_baseline.md` | `src/training.py` | Xong |
+| 2.5a nhiễu, tương phản | `2.5a_nhieu_tuong_phan.ipynb`, `2.5a_phan_tich_nhom_anh.ipynb` | `2.5a_nhieu_tuong_phan.md` | `src/preprocess/`, `scripts/run_preprocess_experiments.py` | Xong |
+| 2.5b lông, viền, sáng | – | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/run_artifact_experiments.py` | Bản nháp |
+| 2.5c tác động 4 tầng | – | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Dở |
+| 2.6, 2.7 | – | `2.6_2.7_pipeline.md` | – | Bản nháp |
+| 2.8 | – | chưa có | `scripts/analyze_errors.py`, `app.py` | Code xong |
+
+Khi thêm code mới: ưu tiên tách module/notebook theo vai trò (xử lý ảnh, train, đánh giá) thay vì nhồi vào một notebook; kết quả thí nghiệm lưu vào `outputs/` (CSV/JSON/ảnh) để báo cáo tái tạo được. Thêm file mới thì đặt tên theo quy ước trên và cập nhật bảng này cùng `AGENTS.md`.
 
 ## Môi trường & lệnh
 
@@ -61,7 +71,7 @@ Khi thêm code mới: ưu tiên tách module/notebook theo vai trò (xử lý �
 ## Quy ước code
 
 - Tái lập: `SEED = 42`, gọi `seed_everything` (random, numpy, torch, cuda) trước mỗi thí nghiệm.
-- Cấu hình hiện tại: `IMG_SIZE=224`, `BATCH_SIZE=32`, chuẩn hóa ImageNet mean/std (dùng pretrained `IMAGENET1K_V1`), `CrossEntropyLoss` có class weights (`balanced`, tính trên train), `AdamW(lr=1e-4, wd=1e-4)`. Đổi các giá trị này chỉ khi có lý do và phải ghi lại, vì sẽ ảnh hưởng tính so sánh giữa các thí nghiệm.
+- Cấu hình hiện tại: `IMG_SIZE=224`, `BATCH_SIZE=32`, chuẩn hóa ImageNet mean/std (dùng pretrained `IMAGENET1K_V1`), `WeightedRandomSampler` + `CrossEntropyLoss` không class weights (tránh bù mất cân bằng hai lần; xem `FROZEN_CONFIG` trong `src/training.py`), `AdamW(lr=1e-4, wd=1e-4)`, 20 epoch, seed 42–44. Đổi các giá trị này chỉ khi có lý do và phải ghi lại, vì sẽ ảnh hưởng tính so sánh giữa các thí nghiệm.
 - Augmentation hiện tại (train only): flip ngang/dọc. Giữ cố định giữa các thí nghiệm trừ khi chính augmentation là biến đang khảo sát.
 - Comment và markdown trong notebook viết tiếng Việt, ngắn gọn, giải thích *tại sao* chứ không chỉ *làm gì*.
 - Không commit dữ liệu, checkpoint, `outputs/` (đã có trong `.gitignore`). Không commit/push nếu chưa được yêu cầu.
