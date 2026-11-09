@@ -6,12 +6,12 @@
 
 **Nhánh:** `main` đã gộp toàn bộ công việc. Các nhánh `Dung-Doanh`, `feat/preprocess-artifacts`, `feat/before-after-impact` được giữ lại để tra cứu, không phát triển tiếp trên đó.
 
-**Việc đang dở:** xem `reports/_handoff_2.5c.md`.
+**Việc đang dở:** xem `TODO.md` (vấn đề, hướng giải quyết, đã/chưa làm); chi tiết số liệu ở `reports/_handoff_2.5c.md`.
 
 ## 1. Quy ước đặt tên
 
 - Tiền tố là **số mục trong kế hoạch nhóm** (`tailieu/ke_hoach_nhom.md`, mục 2.1–2.8), rồi `_mô_tả_không_dấu`.
-- **Notebook và báo cáo cùng phần trùng tên**, chỉ khác đuôi: `2.5a_nhieu_tuong_phan.ipynb` ↔ `reports/2.5a_nhieu_tuong_phan.md`.
+- **Notebook và báo cáo cùng phần thường trùng tên**, chỉ khác đuôi: `2.2_eda_chat_luong_anh.ipynb` ↔ `reports/2.2_eda_chat_luong_anh.md`. Notebook từng vấn đề của 2.5 đặt là `2.5.<số>_<vấn_đề>.ipynb`, ví dụ `2.5.1_nhieu_gauss.ipynb`.
 - Một mục tách nhiều phần: thêm `a`, `b`, `c`. File gộp nhiều mục: `2.6_2.7_…`.
 - Tiền tố `_` = ghi chú làm việc, **không** đưa vào báo cáo (`_handoff_2.5c.md`).
 - Notebook **phải ở gốc repo**: chúng dùng đường dẫn tương đối (`archive/`, `outputs/`) và `from src...`.
@@ -26,7 +26,7 @@
 | 2.2 | EDA chất lượng ảnh | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/*` | `outputs/eda/`, `outputs/figures/eda/` | Xong, trừ cột "Liên quan lỗi CNN?" còn `TODO` |
 | 2.3 | Làm sạch, chia tập, WRS | `2.3_2.4_du_lieu_baseline.ipynb` (mục 3–6) | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | `outputs/splits/`, `outputs/data_prep/` | Xong |
 | 2.4 | Baseline ResNet-18, 3 seed | `2.3_2.4_du_lieu_baseline.ipynb` (mục 7–11) | `2.4_baseline.md` | `src/training.py` | `outputs/baseline/`, `outputs/figures/baseline/` | Xong |
-| 2.5a | Nhiễu Gauss, tương phản thấp | `2.5a_nhieu_tuong_phan.ipynb`, `2.5a_phan_tich_nhom_anh.ipynb` | `2.5a_nhieu_tuong_phan.md` | `src/preprocess/{noise,contrast,image_metrics,compare,figures,subgroup}.py`, `scripts/run_preprocess_experiments.py` | `outputs/preprocess/`, `outputs/experiments/` | Xong |
+| 2.5.1, 2.5.2 | Nhiễu Gauss; tương phản thấp (chạy lại) | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`) | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `src/preprocess/{noise,contrast,compare,subgroup}.py` | `outputs/rerun_2.5/`, `outputs/figures/rerun_2.5/` | Xong (3 seed), báo cáo đã cập nhật |
 | 2.5b | Lông, viền tối, quá sáng, sáng không đều | – (script) | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/{run_artifact_experiments,analyze_artifacts,artifact_constants}.py` | `outputs/preprocess_artifacts/` (máy khác) | Bản nháp, số từ máy RTX 5060 Ti |
 | 2.5c | Tác động theo 4 tầng: ảnh, dự đoán, stress test, Grad-CAM | – (script) | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | `outputs/impact/`, `outputs/figures/impact/` | **Dở**: tầng A xong |
 | 2.6, 2.7 | Pipeline đề xuất, huấn luyện cuối | – | `2.6_2.7_pipeline.md` | – | – | Bản nháp; 2.7 chỉ vài dòng |
@@ -43,8 +43,7 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 |---|---|---|---|---|
 | `2.2_eda_chat_luong_anh.ipynb` | 6,7 MB | 2 cách đo; 3.1–3.7 từng vấn đề (viền, sáng/tối, tương phản, sáng không đều, nhiễu, lông); 4 tổng hợp; 5 liên hệ lỗi CNN (`TODO`); 6–7 bảng kết luận | `outputs/eda/quality_metrics.csv` (sinh bởi `python -X utf8 -m src.eda.quality_metrics --jobs 8`) | `outputs/eda/*` (`image_flags.csv`, `problem_sets/`, `eda_conclusion.csv`, `table_*`), `outputs/figures/eda/` |
 | `2.3_2.4_du_lieu_baseline.ipynb` | 340 KB | 3 kiểm tra metadata; 4 mã hóa nhãn; 5 chia train/val/test; 6 WRS; 7 pipeline tốc độ; 8 cấu hình đóng băng; 9 huấn luyện; 10–11 kết quả 3 seed | `archive/` | `outputs/splits/`, `outputs/data_prep/`, `outputs/baseline/`, `outputs/figures/baseline/` |
-| `2.5a_nhieu_tuong_phan.ipynb` | 2,1 MB | A nhiễu; B tương phản; C kết hợp; D kiểm tra `preprocess_fn` trên 10 015 ảnh; E kế hoạch CNN; F sàng lọc 1 seed; G chạy 3 seed; H theo nhóm ảnh; I nhận xét | `outputs/eda/`, `outputs/baseline/`, `outputs/experiments/` | `outputs/preprocess/`, `outputs/figures/preprocess/` |
-| `2.5a_phan_tich_nhom_anh.ipynb` | 880 KB | Trước/sau **trên chính nhóm có vấn đề** (nhiễu, tương phản): thành phần lớp; chỉ số nhóm con; confusion matrix; chuyển đúng↔sai; Δ xác suất; 100 ảnh chọn có hệ thống | `outputs/eda/image_flags.csv`, dự đoán đã lưu | `outputs/preprocess/subgroup/`, `outputs/figures/preprocess/subgroup/` (qua `src/preprocess/subgroup.py`) |
+| `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | – | Cùng khuôn: 1 mô tả; 2 chứng minh; 3 nhóm ảnh; 4 tỉ lệ; 5 phương pháp; 6 thực nghiệm 3 seed; 7 mẫu 100 ảnh trước/sau; 8 nhận xét | `outputs/eda/`, `outputs/preprocess/summary_*.csv`, `outputs/rerun_2.5/` | `outputs/rerun_2.5/<vấn đề>_sample100.csv`, `outputs/figures/rerun_2.5/` |
 
 ## 4. Script và module
 
@@ -57,6 +56,8 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 | `src/preprocess/image_metrics.py` | Đo ảnh trước/sau (CPU), chỉ trên `train_fit` |
 | `src/preprocess/compare.py` | So với baseline: Δ ghép cặp seed, bootstrap cụm lesion, **quy tắc kết luận 2.5.0** |
 | `src/preprocess/subgroup.py` | Phân tích trên nhóm ảnh có vấn đề (DiD, chuyển đúng/sai) |
+| `src/preprocess/problem_report.py` | Hàm dùng chung cho notebook 2.5.1, 2.5.2; lượt chạy lại ghi vào `outputs/rerun_2.5/` |
+| `scripts/run_problem_experiments.py` | Train lại nhiễu/tương phản: `smoke`, `all` (baseline + 6 cấu hình × 3 seed) |
 | `src/preprocess/figures.py` | Hình giai đoạn 1 của 2.5 |
 | `src/eda/quality_metrics.py`, `flags.py`, `stats.py`, `plots.py` | Bộ đo chất lượng, quy tắc gắn cờ, thống kê, style/màu 7 lớp |
 | `src/report/data_tables.py` | Bảng số cho 2.1, 2.3, 2.4 |
@@ -81,6 +82,7 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 | `splits/` | `train_fit`, `val`, `test` (dùng cho thí nghiệm), `train` = `train_fit` + `val`. **Không tạo split mới** |
 | `baseline/` | `config.json`, `summary*.csv`, `seed{42,43,44}/{metrics.json,history.csv,val_preds.csv,test_preds.csv}` |
 | `experiments/<tên>/` | Cùng cấu trúc baseline. 3 seed: `median3`, `clahe_L_c2_t8`, `median3+clahe_L_c2_t8`, `vig_fill`, `gamma_L_auto`, `flat_L_s60_cond`, `hair_bh17_cond`, `hair_bh17`. 1 seed: `gauss3`, `median5`, `stretch_L_1_99`, `hist_eq_L`. `flat_L_s60`: **chưa có kết quả** |
+| `rerun_2.5/` | Lượt chạy lại nhiễu/tương phản, có baseline và `checkpoints/` riêng; không ghép Δ với `baseline/` ở trên |
 | `checkpoints/` | `<tên>_seed<s>.pt` |
 | `cache/` | Ảnh 224 uint8 đã xử lý, khoảng 1,5 GB/cấu hình |
 | `eda/` | Chỉ số từng ảnh, cờ, nhóm vấn đề, bảng kết luận |
@@ -101,7 +103,7 @@ Quy tắc "khác biệt rõ" (2.5.0): |Δ| > std giữa seed của baseline, CI9
 PY=.venv/Scripts/python.exe     # python hệ thống không có pandas; luôn thêm -X utf8
 
 # Xem đề mục notebook mà không mở cả file
-$PY -X utf8 -c "import json,sys;[print(l) for c in json.load(open(sys.argv[1],encoding='utf-8'))['cells'] if c['cell_type']=='markdown' for l in ''.join(c['source']).splitlines() if l.startswith('#')]" 2.5a_nhieu_tuong_phan.ipynb
+$PY -X utf8 -c "import json,sys;[print(l) for c in json.load(open(sys.argv[1],encoding='utf-8'))['cells'] if c['cell_type']=='markdown' for l in ''.join(c['source']).splitlines() if l.startswith('#')]" 2.5.1_nhieu_gauss.ipynb
 
 # Train một cấu hình 3 seed (bỏ qua seed đã có metrics.json)
 $PY -X utf8 scripts/run_artifact_experiments.py run <tên> 42 43 44

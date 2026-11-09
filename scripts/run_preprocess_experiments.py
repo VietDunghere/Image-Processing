@@ -1,4 +1,4 @@
-"""Giai đoạn 2 của 2.5: thí nghiệm CNN cho khử nhiễu / tăng tương phản (kế hoạch ở 2.5a_nhieu_tuong_phan.ipynb, mục E).
+"""Giai đoạn 2 của 2.5: thí nghiệm CNN cho khử nhiễu / tăng tương phản (lượt cũ; lượt chạy lại ở run_problem_experiments.py).
 
 Chạy (từ thư mục gốc repo, python của .venv):
     python -X utf8 scripts/run_preprocess_experiments.py smoke              # chạy thử subset nhỏ, 1 epoch

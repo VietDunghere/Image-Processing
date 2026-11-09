@@ -41,7 +41,7 @@ Hướng dẫn cho Claude Code khi làm việc trong repo này. Viết/trả l�
 
 ## Cấu trúc repo
 
-**Bản đồ chi tiết ở `AGENTS.md`** (từng notebook làm gì, script, `outputs/`, bẫy cần tránh, lệnh hay dùng). Đọc file đó trước khi mở notebook; notebook rất nặng (tới 6,7 MB). Việc đang dở: `reports/_handoff_2.5c.md`.
+**Bản đồ chi tiết ở `AGENTS.md`** (từng notebook làm gì, script, `outputs/`, bẫy cần tránh, lệnh hay dùng). Đọc file đó trước khi mở notebook; notebook rất nặng (tới 6,7 MB). Việc đang dở: `TODO.md`.
 
 Quy ước tên: tiền tố là số mục kế hoạch; notebook và báo cáo cùng phần trùng tên, chỉ khác đuôi; tiền tố `_` là ghi chú làm việc. Notebook phải ở gốc repo.
 
@@ -52,7 +52,7 @@ Quy ước tên: tiền tố là số mục kế hoạch; notebook và báo cáo
 | 2.2 EDA | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/` | Xong, còn `TODO` liên hệ lỗi CNN |
 | 2.3 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | Xong |
 | 2.4 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.4_baseline.md` | `src/training.py` | Xong |
-| 2.5a nhiễu, tương phản | `2.5a_nhieu_tuong_phan.ipynb`, `2.5a_phan_tich_nhom_anh.ipynb` | `2.5a_nhieu_tuong_phan.md` | `src/preprocess/`, `scripts/run_preprocess_experiments.py` | Xong |
+| 2.5.1 nhiễu, 2.5.2 tương phản | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`) | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py` | Xong (3 seed), báo cáo đã cập nhật |
 | 2.5b lông, viền, sáng | – | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/run_artifact_experiments.py` | Bản nháp |
 | 2.5c tác động 4 tầng | – | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Dở |
 | 2.6, 2.7 | – | `2.6_2.7_pipeline.md` | – | Bản nháp |
