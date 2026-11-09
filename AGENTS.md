@@ -33,7 +33,7 @@
 | 2.8 | Phân tích lỗi, demo | – | **chưa có** | `scripts/analyze_errors.py`, `app.py` | `outputs/errors/` (chưa có ở máy này) | Code xong, chưa viết báo cáo |
 | 3 | Thảo luận, phân công, khai báo AI, Overleaf, slide | – | **chưa có** | – | – | Chưa làm |
 
-**Kết luận chính đến nay:** 12/12 cấu hình 3 seed "không khác biệt rõ" với baseline về macro-F1, nên pipeline phân loại giữ nguyên baseline, thêm nhánh QC chỉ gắn cờ (2.6).
+**Kết luận chính đến nay:** 0/16 cấu hình 3 seed "tốt hơn rõ" baseline về macro-F1 trên val (`hist_eq_L`, `stretch_L_1_99` tệ hơn rõ trên test), nên pipeline phân loại giữ nguyên baseline, thêm nhánh QC chỉ gắn cờ (2.6).
 
 ## 3. Mỗi notebook làm gì
 
