@@ -12,6 +12,7 @@ from functools import partial
 
 from .contrast import clahe_L, hist_eq_L, stretch_L
 from .noise import denoise_gaussian, denoise_mean, denoise_median
+from .artifacts import flatfield, gamma_auto, gamma_fixed, remove_hair, vignette_crop, vignette_fill
 
 
 def identity(rgb):
@@ -37,7 +38,19 @@ CONTRAST_CANDIDATES = {
     "clahe_L_c3_t8": partial(clahe_L, clip=3.0, tiles=8, space="lab"),
     "clahe_V_c2_t8": partial(clahe_L, clip=2.0, tiles=8, space="hsv"),   # đối chứng hệ màu: V (HSV) thay L*
 }
-CANDIDATES = {**NOISE_CANDIDATES, **CONTRAST_CANDIDATES}
+# 4 vấn đề còn lại của bảng EDA (src/preprocess/artifacts.py). Mỗi vấn đề: 1 bản "toàn bộ" + 1 bản "có điều kiện"
+# hoặc 2 cách sửa khác bản chất (viền: tô màu da vs cắt).
+ARTIFACT_CANDIDATES = {
+    "hair_bh17": partial(remove_hair, k=17, thr=20, radius=5),                       # mọi ảnh
+    "hair_bh17_cond": partial(remove_hair, k=17, thr=20, radius=5, conditional=True),  # chỉ ảnh cờ "lông"
+    "vig_fill": partial(vignette_fill, ring=25, feather=21),                          # chỉ ảnh có viền (tự nhiên)
+    "vig_crop": partial(vignette_crop, max_dark=0.005),
+    "gamma_L_1.5": partial(gamma_fixed, gamma=1.5),                                  # mọi ảnh
+    "gamma_L_auto": partial(gamma_auto),                                             # chỉ ảnh cờ "quá sáng"
+    "flat_L_s60": partial(flatfield, sigma=60.0, skin_only=True),                    # mọi ảnh
+    "flat_L_s60_cond": partial(flatfield, sigma=60.0, skin_only=True, conditional=True),  # chỉ ảnh cờ "sáng không đều"
+}
+CANDIDATES = {**NOISE_CANDIDATES, **CONTRAST_CANDIDATES, **ARTIFACT_CANDIDATES}
 
 
 def get_preprocess(name: str):
@@ -56,4 +69,4 @@ def _compose(rgb, fns):
 
 
 __all__ = ["denoise_mean", "denoise_gaussian", "denoise_median", "stretch_L", "hist_eq_L", "clahe_L",
-           "identity", "NOISE_CANDIDATES", "CONTRAST_CANDIDATES", "CANDIDATES", "get_preprocess"]
+           "identity", "NOISE_CANDIDATES", "CONTRAST_CANDIDATES", "ARTIFACT_CANDIDATES", "CANDIDATES", "get_preprocess"]

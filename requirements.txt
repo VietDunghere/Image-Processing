@@ -16,3 +16,6 @@ opencv-python-headless>=4.10   # EDA: đo chỉ số chất lượng ảnh (src/
 # Jupyter
 ipykernel>=6.28
 notebook>=7.0
+
+# Demo 2.8
+streamlit>=1.40
