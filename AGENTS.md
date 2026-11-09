@@ -4,7 +4,9 @@
 
 **Đề tài:** đánh giá tác động của xử lý ảnh cổ điển (Ch.3) lên phân loại HAM10000 bằng CNN. Mục tiêu là lập luận → thực nghiệm → đánh giá, **không** săn điểm. Kết quả âm vẫn là kết quả. Hạn nộp 11/11/2026.
 
-**Việc đang dở:** xem `reports/_handoff_2.5c.md` (nhánh `feat/before-after-impact`, chưa commit).
+**Nhánh:** `main` đã gộp toàn bộ công việc. Các nhánh `Dung-Doanh`, `feat/preprocess-artifacts`, `feat/before-after-impact` được giữ lại để tra cứu, không phát triển tiếp trên đó.
+
+**Việc đang dở:** xem `reports/_handoff_2.5c.md`.
 
 ## 1. Quy ước đặt tên
 
@@ -121,6 +123,7 @@ $PY -X utf8 scripts/run_artifact_experiments.py run <tên> 42 43 44
 
 - **Đừng sửa mã nguồn hoặc docstring của hàm tiền xử lý đã có cache** (`noise.py`, `contrast.py`, `artifacts.py`). `fn_fingerprint` băm mã nguồn hàm, nên sửa sẽ làm cache sai fingerprint và tính lại. Ngược lại, sửa **hàm phụ** mà hàm chính gọi thì fingerprint không đổi, nên cache cũ vẫn được dùng; khi đó phải xóa cache thủ công. Đó cũng là lý do `tailieu/DoAn_XuLyAnh.pdf` giữ nguyên tên: docstring của `clahe_L` nhắc tới nó.
 - **Hai bộ baseline khác máy, không ghép Δ chéo.** Máy này (RTX 3050): test macro-F1 0,6805 ± 0,0192. `2.5b`, `2.6`, `2.7` dùng 0,6785 ± 0,0263 (RTX 5060 Ti). `app.py` dùng checkpoint máy này, nên số ở `2.7` không khớp.
+- **Cấu hình kết hợp `"a+b"` luôn bị tính lại cache.** Fingerprint của nó chứa địa chỉ bộ nhớ của hàm, nên khác nhau mỗi lần chạy (ví dụ `median3+clahe_L_c2_t8`). Đây là hành vi sẵn có của `fn_fingerprint`, không phải lỗi dữ liệu.
 - **Chạy tác vụ nặng lần lượt.** RAM 23,7 GB; hai tác vụ song song từng bị hệ thống dừng vì thiếu bộ nhớ. Mỗi cache nạp vào RAM khoảng 1,5 GB.
 - **Hỏi người dùng trước khi train lâu**; chạy thử tập nhỏ trước. Không commit/push khi chưa được yêu cầu.
 - **Test không dùng để chọn phương pháp.** Chia theo `lesion_id`; thống kê lỗi chỉ dùng dự đoán ngoài mẫu.

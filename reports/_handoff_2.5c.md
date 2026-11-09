@@ -1,8 +1,8 @@
 # Bàn giao: mục 2.5c "Tác động trước/sau của tiền xử lý"
 
 > Cập nhật 9/11/2026. Đây là ghi chú làm việc cho agent/thành viên tiếp theo, **không phải nội dung báo cáo**.
-> Hạn nộp đồ án: 11/11/2026. Nhánh: `feat/before-after-impact`, tách từ `feat/preprocess-artifacts` (HEAD `f9e3c1c`).
-> **Chưa commit gì.** `CLAUDE.md` cấm commit/push khi chưa được yêu cầu.
+> Hạn nộp đồ án: 11/11/2026. Mọi thứ dưới đây đã merge vào `main` (nhánh gốc `feat/before-after-impact` được giữ lại). Tiếp tục làm trên `main` hoặc nhánh mới từ `main`.
+> `CLAUDE.md` cấm commit/push khi chưa được yêu cầu.
 
 ## 1. Vì sao có việc này
 
@@ -112,7 +112,7 @@ Quan sát định tính cần ghi (`fig_a4`):
 - Chỉ số ảnh gốc ở tầng A khớp `quality_metrics.csv` (sai số tối đa 0).
 - Suy luận lại baseline trên test khớp dự đoán đã lưu 99,95% (seed 42) và 100% (seed 43, 44).
 
-## 6. File liên quan (chưa commit)
+## 6. File liên quan
 
 - `src/preprocess/degrade.py`: 6 loại suy giảm × 3 mức, tất định theo `image_id`; `LEVELS`, `PAIRS`.
 - `scripts/impact_image_level.py`, `impact_flips.py`, `impact_stress.py`, `impact_gradcam.py`.

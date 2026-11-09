@@ -1,4 +1,4 @@
-# 1. Giới thiệu đề tài
+# 1 Giới thiệu đề tài
 
 > Bản thảo. Mục này chưa chứa kết quả thực nghiệm nên không có con số từ `outputs/` ngoài quy mô dữ liệu (nguồn: `outputs/report_tables/data_checks.json`).
 > Phần ghi **[dự kiến]** là kế hoạch, chưa thực hiện, cần cập nhật khi có kết quả.
