@@ -1,7 +1,7 @@
-"""Tái tạo split cố định outputs/splits/{train,test,train_fit,val}.csv (giống baseline.ipynb, cell 26–28).
+"""Tái tạo split cố định outputs/splits/{train,test,train_fit,val}.csv (giống 2.3_2.4_du_lieu_baseline.ipynb, cell 26–28).
 
 Dùng khi chuyển sang máy khác mà không mang theo outputs/. Split là hàm tất định của metadata + SEED,
-nên tái tạo được; script so lại số ảnh từng lớp với bảng đã in trong baseline.ipynb để chắc chắn khớp.
+nên tái tạo được; script so lại số ảnh từng lớp với bảng đã in trong 2.3_2.4_du_lieu_baseline.ipynb để chắc chắn khớp.
 
     python -X utf8 scripts/make_splits.py
 """
@@ -14,7 +14,7 @@ SEED, TEST_SIZE, VAL_SIZE = 42, 0.2, 0.2
 DATA_DIR = Path("archive")
 SPLIT_DIR = Path("outputs/splits")
 COLS = ["image_id", "lesion_id", "dx", "label", "path"]
-# Số ảnh/lớp đã in trong baseline.ipynb (cell 29) -> split tái tạo phải khớp
+# Số ảnh/lớp đã in trong 2.3_2.4_du_lieu_baseline.ipynb (cell 29) -> split tái tạo phải khớp
 EXPECTED = {"train_fit": [209, 329, 703, 73, 713, 4291, 90],
             "val": [52, 82, 176, 19, 178, 1073, 23],
             "test": [66, 103, 220, 23, 222, 1341, 29]}

@@ -1,6 +1,6 @@
 """Đo thời gian 1 epoch (train + val) của pipeline CŨ và MỚI trên cùng dữ liệu baseline, cùng cấu hình thí nghiệm.
 
-CŨ  (baseline.ipynb trước khi tách module): ảnh PIL đã resize cache trong RAM -> RandomFlip + ToTensor + Normalize
+CŨ  (2.3_2.4_du_lieu_baseline.ipynb trước khi tách module): ảnh PIL đã resize cache trong RAM -> RandomFlip + ToTensor + Normalize
      trên CPU mỗi ảnh, DataLoader num_workers=0, fp32, cudnn.deterministic=True, benchmark=False.
 MỚI (src/training.py): cache uint8 tensor, flip + normalize trên GPU, AMP fp16, channels_last, cudnn.benchmark.
 
