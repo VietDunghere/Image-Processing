@@ -10,7 +10,7 @@
 
 - Baseline ResNet-18 (chỉ resize và normalize): test macro-F1 **0,6805 ± 0,0192** trên 3 seed (`outputs/baseline/summary_mean_std.csv`). Lượt chạy lại phần nhiễu và tương phản có baseline riêng **0,6837 ± 0,0141** (`outputs/rerun_2.5/`). Mỗi phần so với baseline của chính nó.
 - Không cấu hình tiền xử lý nào **tốt hơn rõ** baseline về macro-F1 trên val. `hist_eq_L` tệ hơn rõ trên val và test, `stretch_L_1_99` tệ hơn rõ trên test, các cấu hình còn lại không khác biệt rõ (`reports/2.5a_nhieu_tuong_phan.md`, `reports/2.6_2.7_pipeline.md`). Pipeline đề xuất vì vậy giữ nguyên baseline, thêm một nhánh kiểm tra chất lượng ảnh chỉ để gắn cờ.
-- Phân tích tác động theo các tầng khác đang thực hiện (`reports/2.5c_tac_dong_truoc_sau.md`).
+- Phân tích tác động theo các tầng khác đang thực hiện (`TODO.md`).
 
 ## Bắt đầu đọc từ đâu
 

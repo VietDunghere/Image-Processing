@@ -15,7 +15,7 @@
 | C. Stress test | Khi ảnh val/test bị suy giảm tổng hợp, tiền xử lý có giữ được F1 không? | `scripts/impact_stress.py`, `src/preprocess/degrade.py` |
 | D. Grad-CAM | Mô hình có bớt nhìn vào lông/viền không? | `scripts/impact_gradcam.py` |
 
-Giả thuyết và thiết kế đã viết **trước khi có kết quả** ở `reports/2.5c_tac_dong_truoc_sau.md` (mục 2.5c.0).
+Giả thuyết và thiết kế đã viết **trước khi có kết quả** ở mục 2.5c.0 của báo cáo 2.5c cũ. File đã xóa khỏi thư mục làm việc, xem lại bằng `git show 8d69074^:reports/2.5c_tac_dong_truoc_sau.md`.
 **Không sửa phần giả thuyết, `LEVELS`, `PAIRS` để khớp kết quả.** Nếu buộc phải đổi thiết kế thì ghi rõ lý do và thời điểm, như đã làm với `flat_L_s60`.
 
 ## 2. Trạng thái
@@ -56,7 +56,7 @@ $PY -X utf8 scripts/impact_flips.py
 ```
 
 Sau đó:
-5. Điền kết quả vào `reports/2.5c_tac_dong_truoc_sau.md`, đối chiếu từng giả thuyết H-A1…H-D2, gồm cả giả thuyết bị bác.
+5. Điền kết quả vào báo cáo 2.5c (file cũ đã xóa, cần tạo file mới nếu còn làm mục này), đối chiếu từng giả thuyết H-A1…H-D2, gồm cả giả thuyết bị bác.
 6. Xem trực quan các hình mới (`fig_b*`, `fig_c*`, `fig_d*`) trước khi đưa vào báo cáo.
 7. Báo kết quả cho người dùng, hỏi có commit không.
 
@@ -116,7 +116,7 @@ Quan sát định tính cần ghi (`fig_a4`):
 
 - `src/preprocess/degrade.py`: 6 loại suy giảm × 3 mức, tất định theo `image_id`; `LEVELS`, `PAIRS`.
 - `scripts/impact_image_level.py`, `impact_flips.py`, `impact_stress.py`, `impact_gradcam.py`.
-- `reports/2.5c_tac_dong_truoc_sau.md`: giả thuyết và thiết kế.
+- `git show 8d69074^:reports/2.5c_tac_dong_truoc_sau.md`: giả thuyết và thiết kế (file đã xóa khỏi thư mục làm việc).
 - `reports/_handoff_2.5c.md`: file này.
 
 ## 7. Việc còn tồn từ trước (ngoài 2.5c)

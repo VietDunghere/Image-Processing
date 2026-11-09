@@ -55,7 +55,7 @@ Quy ước tên: tiền tố là số mục kế hoạch; notebook và báo cáo
 | 2.5.1 nhiễu, 2.5.2 tương phản | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`) | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py` | Xong (3 seed), báo cáo đã cập nhật |
 | 2.5b lông, viền, sáng | – | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/run_artifact_experiments.py` | Bản nháp |
 | 2.5.3–2.5.6 lông, sáng không đều, quá sáng, viền tối | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | `src/report/notebook_utils.py`, `scripts/make_problem_notebooks.py`, `src/preprocess/artifacts.py` | Có output 3 seed từ máy RTX 5060 Ti (`outputs/runs_cl/`) |
-| 2.5c tác động 4 tầng | – | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Dở |
+| 2.5c tác động 4 tầng | – | – | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Dở |
 | 2.6, 2.7 | – | `2.6_2.7_pipeline.md` | – | Bản nháp |
 | 2.8 | – | `2.8_danh_gia.md` | `scripts/analyze_errors.py`, `app.py` | Code xong, báo cáo bản nháp |
 

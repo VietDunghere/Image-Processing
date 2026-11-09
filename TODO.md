@@ -23,7 +23,7 @@ Ràng buộc: phải trung thực. Không chọn số đẹp, không thêm thí 
 | C. Stress test | Ảnh val/test bị suy giảm tổng hợp thì tiền xử lý có giữ được F1 không? | Baseline không xử lý, 3 nhánh | `scripts/impact_stress.py`, `src/preprocess/degrade.py` |
 | D. Grad-CAM | Mô hình có bớt nhìn vào lông/viền không? | Baseline; mức nền khác seed | `scripts/impact_gradcam.py` |
 
-Giả thuyết H-A1…H-D2 và thiết kế đã **chốt trước khi có kết quả** tại `reports/2.5c_tac_dong_truoc_sau.md` (mục 2.5c.0). `LEVELS`, `PAIRS` trong `degrade.py` cũng đã chốt. Không sửa để khớp số.
+Giả thuyết H-A1…H-D2 và thiết kế đã **chốt trước khi có kết quả** ở mục 2.5c.0 của báo cáo 2.5c cũ. File đã xóa khỏi thư mục làm việc, xem lại bằng `git show 8d69074^:reports/2.5c_tac_dong_truoc_sau.md`. `LEVELS`, `PAIRS` trong `degrade.py` cũng đã chốt. Không sửa để khớp số.
 
 Kết luận theo quy tắc 2.5.0: "khác biệt rõ" khi |Δ| > std giữa seed của baseline, CI95 bootstrap cụm lesion không chứa 0, và cả 3 seed cùng dấu.
 
@@ -59,7 +59,7 @@ PY=.venv/Scripts/python.exe
 - [ ] **4. Tầng B.** `$PY -X utf8 scripts/impact_flips.py` (CPU, dùng dự đoán đã lưu).
 - [ ] **5. Xem trực quan** các hình `fig_b*`, `fig_c*`, `fig_d*`. Code `impact_flips.py`, `impact_stress.py analyze`/`grid`, `impact_gradcam.py analyze` **chưa chạy lần nào**, có thể còn lỗi.
 - [ ] **6. Tính CI cho 5 cấu hình vừa train** bằng `src.preprocess.compare.comparison_table`. Đặc biệt `hair_bh17`: test macro-F1 0,6247 / 0,6290 / 0,5875, so với baseline 0,6921 / 0,6583 / 0,6912; Δ khoảng −0,067, cả 3 seed cùng giảm. Chưa có CI nên chưa kết luận.
-- [ ] **7. Viết kết quả vào `reports/2.5c_tac_dong_truoc_sau.md`:** đối chiếu từng giả thuyết, kể cả giả thuyết bị bác. Nêu hạn chế: ảnh giả lập; với viền và lông, phép xử lý gần như nghịch đảo của suy giảm.
+- [ ] **7. Viết kết quả vào báo cáo 2.5c (file cũ đã xóa, cần tạo file mới nếu còn làm mục này):** đối chiếu từng giả thuyết, kể cả giả thuyết bị bác. Nêu hạn chế: ảnh giả lập; với viền và lông, phép xử lý gần như nghịch đảo của suy giảm.
 
 ## 5. Việc tồn đọng ngoài 2.5c
 
