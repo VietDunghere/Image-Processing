@@ -127,7 +127,7 @@ m = qc_metrics(rgb)
 qc = pd.DataFrame([dict(vấn_đề=n, chỉ_số=k, giá_trị=round(float(m[k]), 4) if pd.notna(m[k]) else None,
                         ngưỡng=r, gắn_cờ="⚠️ có" if pd.notna(m[k]) and f(m) else "–")
                    for n, k, f, r in QC_RULES])
-st.dataframe(qc, hide_index=True, use_container_width=True)
+st.dataframe(qc, hide_index=True, width="stretch")
 st.caption("Cờ chỉ là cảnh báo. 2.8: sau khi chuẩn hóa theo thành phần lớp, ảnh 'sáng không đều' và 'quá sáng' có lỗi "
            "baseline cao hơn kỳ vọng (test); đây là liên quan, không phải ước lượng độ tin cậy đã kiểm chứng.")
 
@@ -143,7 +143,7 @@ for i, (name, img) in enumerate(stages):
     with cols[i % len(cols)]:
         changed = "" if i == 0 else (" (không đổi – ảnh không bị gắn cờ)" if np.array_equal(img, stages[i - 1][1])
                                      else "")
-        st.image(img, caption=name + changed, use_container_width=True)
+        st.image(img, caption=name + changed, width="stretch")
         if name in NOTES:
             st.caption(NOTES[name])
 

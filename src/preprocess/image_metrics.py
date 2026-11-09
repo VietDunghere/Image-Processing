@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import argparse
 import time
-from multiprocessing import Pool
+from multiprocessing import get_context
 from pathlib import Path
 
 import cv2
@@ -196,7 +196,7 @@ def run(kind: str, n_jobs: int = 12, limit: int | None = None) -> pd.DataFrame:
     if limit:
         sel = sel.groupby("group").head(limit)
     jobs = [(r.image_id, r.path, kind) for r in sel.itertuples()]
-    with Pool(n_jobs) as pool:
+    with get_context("spawn").Pool(n_jobs) as pool:   # spawn: fork trên Linux bị treo khi tiến trình cha đã có luồng OpenCV
         res = pool.map(_worker, jobs, chunksize=4)
     df = pd.DataFrame([r for rs in res for r in rs]).merge(sel.drop(columns="path"), on="image_id")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -242,7 +242,7 @@ def _check_worker(args):
 def check_all(n_jobs: int = 12) -> pd.DataFrame:
     idx = pd.concat([pd.read_csv(SPLIT_DIR / f) for f in ("train.csv", "test.csv")], ignore_index=True)
     t0 = time.time()
-    with Pool(n_jobs) as pool:
+    with get_context("spawn").Pool(n_jobs) as pool:   # spawn: fork trên Linux bị treo khi tiến trình cha đã có luồng OpenCV
         res = pool.map(_check_worker, list(zip(idx["image_id"], idx["path"])), chunksize=16)
     df = pd.DataFrame(res)
     wall = time.time() - t0

@@ -155,7 +155,6 @@ def cmd_hair_mel():
     """Kiểm chứng: hair_bh17 (toàn bộ) giảm recall mel – ảnh mel đi đâu, và mask lông có phủ lên tổn thương không."""
     from concurrent.futures import ThreadPoolExecutor
     from scipy.stats import mannwhitneyu
-    import cv2
     from src.preprocess.artifacts import hair_mask_full, remove_hair
     OUT.mkdir(parents=True, exist_ok=True)
     setup_style()
@@ -290,7 +289,6 @@ def cmd_fig_before_after():
     from src.eda.quality_metrics import lesion_mask
     from src.preprocess import ARTIFACT_CANDIDATES as CAND
     from src.preprocess.artifacts import _fov, _gray, _norm_blur, _to_lab, hair_mask_full
-    from src.eda.quality_metrics import vignette_mask
     setup_style()
     q = pd.read_csv("outputs/eda/quality_metrics.csv")
     fl = pd.read_csv("outputs/eda/image_flags.csv")

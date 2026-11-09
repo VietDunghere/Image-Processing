@@ -67,7 +67,9 @@ FROZEN_CONFIG = {
 SPEED_CONFIG = {
     "amp": "torch.autocast(cuda, float16) + GradScaler cho forward/loss; softmax/metrics tính ở float32",
     "channels_last": False,
-    "channels_last_note": "Đã thử: trên RTX 3050 Laptop + torch 2.8 channels_last chậm ~4-5x (386 vs 80 ms/step, scripts/bench_layout.py) -> giữ NCHW",
+    "channels_last_note": "Mặc định tắt: trên RTX 3050 Laptop + torch 2.8 channels_last chậm ~4-5x (386 vs 80 ms/step, "
+                          "scripts/bench_layout.py). Trên RTX 5060 Ti + torch 2.14 nhanh hơn ~26% (1 724 so với 1 364 ảnh/s "
+                          "ở batch 32) -> bật qua run_experiment(channels_last=True) cho lần chạy outputs/runs_cl",
     "cudnn_benchmark": True,
     "cudnn_deterministic": False,
     "data_pipeline": "ảnh đã resize cache uint8 trong RAM; flip + normalize trên GPU theo batch; "
@@ -217,11 +219,14 @@ def load_image_cache(frames: dict[str, pd.DataFrame], preprocess_fn: Optional[Ca
 
 
 class GPUBatcher:
-    """Thay DataLoader: lấy batch từ cache uint8, chuyển lên GPU, flip + normalize trên GPU."""
+    """Thay DataLoader: lấy batch từ cache uint8, chuyển lên GPU, flip + normalize trên GPU.
+    channels_last=True: trả batch ở định dạng NHWC trong bộ nhớ (cùng giá trị, chỉ khác cách xếp) → nhanh hơn
+    khoảng 26% trên RTX 5060 Ti; trên RTX 3050 Laptop thì chậm hơn (SPEED_CONFIG)."""
 
-    def __init__(self, images_u8: torch.Tensor, device, pin: bool = True):
+    def __init__(self, images_u8: torch.Tensor, device, pin: bool = True, channels_last: bool = False):
         self.x = images_u8.pin_memory() if (pin and device.type == "cuda") else images_u8
         self.device = device
+        self.channels_last = channels_last
         self.mean = torch.tensor(IMAGENET_MEAN, device=device).view(1, 3, 1, 1) * 255
         self.std = torch.tensor(IMAGENET_STD, device=device).view(1, 3, 1, 1) * 255
 
@@ -231,7 +236,8 @@ class GPUBatcher:
             fh, fv = flip_h.to(self.device).view(-1, 1, 1, 1), flip_v.to(self.device).view(-1, 1, 1, 1)
             x = torch.where(fh, x.flip(3), x)
             x = torch.where(fv, x.flip(2), x)
-        return (x.float() - self.mean) / self.std
+        x = (x.float() - self.mean) / self.std
+        return x.contiguous(memory_format=torch.channels_last) if self.channels_last else x
 
 
 def make_sampler(labels: np.ndarray, seed: int) -> WeightedRandomSampler:
@@ -244,10 +250,11 @@ def make_sampler(labels: np.ndarray, seed: int) -> WeightedRandomSampler:
 
 
 # ---------------------------------------------------------------- mô hình / train / eval
-def make_model(device) -> nn.Module:
+def make_model(device, channels_last: bool = False) -> nn.Module:
     m = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     m.fc = nn.Linear(m.fc.in_features, NUM_CLASSES)   # 512 -> 7 lớp
-    return m.to(device)
+    m = m.to(device)
+    return m.to(memory_format=torch.channels_last) if channels_last else m
 
 
 def train_one_epoch(model, batcher: GPUBatcher, labels_gpu, sampler, flip_gen, criterion, optimizer, scaler,
@@ -323,20 +330,20 @@ def summarize(summary_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def train_seed(name: str, seed: int, frames, cache, run_dir: Path, ckpt_path: Path, epochs: int, device,
-               log, amp: bool = True, eval_batch_size: int = 128) -> dict:
+               log, amp: bool = True, eval_batch_size: int = 128, channels_last: bool = False) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
     ckpt_path.parent.mkdir(parents=True, exist_ok=True)
     seed_everything(seed)
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats()
     y = {k: f["label"].to_numpy().copy() for k, f in frames.items()}
-    model = make_model(device)
+    model = make_model(device, channels_last)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
     scaler = torch.amp.GradScaler("cuda", enabled=amp)
     sampler = make_sampler(y["train"], seed)
     flip_gen = torch.Generator().manual_seed(seed + 10_000)        # flip độc lập với WRS, vẫn theo seed
-    bt = {k: GPUBatcher(cache[k], device) for k in ("train", "val", "test")}
+    bt = {k: GPUBatcher(cache[k], device, channels_last=channels_last) for k in ("train", "val", "test")}
     labels_gpu = torch.as_tensor(y["train"], dtype=torch.long, device=device)
 
     history, best_f1, best_state, best_epoch = [], -1.0, None, -1
@@ -394,7 +401,8 @@ def run_experiment(name: str, preprocess_fn: Optional[Callable[[np.ndarray], np.
                    seeds: Iterable[int] = SEEDS, out_dir=None, epochs: int = EPOCHS, subset: Optional[int] = None,
                    retrain: bool = False, *, cache_key: Optional[str] = "auto", description: str = "",
                    extra_config: Optional[dict] = None, log_file=None, n_jobs: int = 12,
-                   amp: bool = True) -> pd.DataFrame:
+                   amp: bool = True, channels_last: bool = False, eval_batch_size: int = 128,
+                   out_root=None) -> pd.DataFrame:
     """Chạy 1 thí nghiệm (một cấu hình tiền xử lý) với nhiều seed, lưu kết quả, trả về DataFrame 1 dòng/seed.
 
     name          : tên thí nghiệm ("baseline", "median3", ...). Là khoá cache ảnh -> phải duy nhất cho 1 preprocess_fn.
@@ -405,9 +413,14 @@ def run_experiment(name: str, preprocess_fn: Optional[Callable[[np.ndarray], np.
     retrain       : False -> seed đã có metrics.json thì đọc lại.
     cache_key     : "auto" = name (None nếu subset); None = không cache đĩa; str = khoá tuỳ chọn.
     log_file      : file log tiến độ bổ sung (luôn ghi out_dir/train.log).
+    channels_last, eval_batch_size : chỉ ảnh hưởng tốc độ, không đổi siêu tham số (batch train, lr giữ nguyên).
+    out_root      : thư mục gốc riêng cho một "lần chạy" (vd. outputs/runs_cl): kết quả ở out_root/<name>,
+                    checkpoint ở out_root/checkpoints → không đè kết quả của lần chạy khác.
     """
     seeds = list(seeds)
     tag = name if subset is None else f"{name}_subset{subset}"
+    if out_dir is None and out_root is not None and subset is None:
+        out_dir = Path(out_root) / name
     if out_dir is None:
         out_dir = (Path("outputs/baseline") if name == "baseline" else Path("outputs/experiments") / name) \
             if subset is None else Path("outputs/experiments/_debug") / tag
@@ -430,7 +443,8 @@ def run_experiment(name: str, preprocess_fn: Optional[Callable[[np.ndarray], np.
               getattr(preprocess_fn, "__name__", repr(preprocess_fn)),
               "preprocess_fingerprint": fn_fingerprint(preprocess_fn),
               "preprocess_order": "ảnh gốc 600x450 -> preprocess_fn -> resize 224 -> cache; giống nhau train/val/test",
-              "subset": subset, "speed": {**SPEED_CONFIG, "amp_enabled": amp},
+              "subset": subset, "speed": {**SPEED_CONFIG, "amp_enabled": amp, "channels_last_enabled": channels_last,
+                                          "eval_batch_size_used": eval_batch_size},
               "env": {"torch": torch.__version__,
                       "gpu": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"},
               **(extra_config or {})}
@@ -443,8 +457,9 @@ def run_experiment(name: str, preprocess_fn: Optional[Callable[[np.ndarray], np.
         log(f"[{tag}] nạp ảnh (cache_key={key}) | split {config['split_sizes']} | seed cần train: {todo}")
         cache = load_image_cache(frames, preprocess_fn, key, n_jobs=n_jobs, log=log)
         for s in todo:
-            ckpt = CKPT_DIR / f"{tag}_seed{s}.pt"
-            results[s] = train_seed(name, s, frames, cache, out_dir / f"seed{s}", ckpt, epochs, device, log, amp)
+            ckpt = (Path(out_root) / "checkpoints" if out_root is not None else CKPT_DIR) / f"{tag}_seed{s}.pt"
+            results[s] = train_seed(name, s, frames, cache, out_dir / f"seed{s}", ckpt, epochs, device, log, amp,
+                                    eval_batch_size=eval_batch_size, channels_last=channels_last)
         del cache
     elif not (out_dir / "config.json").exists():
         (out_dir / "config.json").write_text(json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8")
