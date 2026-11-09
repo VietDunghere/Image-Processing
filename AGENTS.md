@@ -28,9 +28,10 @@
 | 2.4 | Baseline ResNet-18, 3 seed | `2.3_2.4_du_lieu_baseline.ipynb` (mục 7–11) | `2.4_baseline.md` | `src/training.py` | `outputs/baseline/`, `outputs/figures/baseline/` | Xong |
 | 2.5.1, 2.5.2 | Nhiễu Gauss; tương phản thấp (chạy lại) | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`) | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `src/preprocess/{noise,contrast,compare,subgroup}.py` | `outputs/rerun_2.5/`, `outputs/figures/rerun_2.5/` | Xong (3 seed), báo cáo đã cập nhật |
 | 2.5b | Lông, viền tối, quá sáng, sáng không đều | – (script) | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/{run_artifact_experiments,analyze_artifacts,artifact_constants}.py` | `outputs/preprocess_artifacts/` (máy khác) | Bản nháp, số từ máy RTX 5060 Ti |
+| 2.5.3–2.5.6 | Lông, sáng không đều, quá sáng, viền tối (mỗi vấn đề một notebook) | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | `src/report/notebook_utils.py`, `scripts/make_problem_notebooks.py`, `src/preprocess/artifacts.py` | `outputs/runs_cl/` (máy khác) | Có output 3 seed từ máy RTX 5060 Ti |
 | 2.5c | Tác động theo 4 tầng: ảnh, dự đoán, stress test, Grad-CAM | – (script) | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | `outputs/impact/`, `outputs/figures/impact/` | **Dở**: tầng A xong |
 | 2.6, 2.7 | Pipeline đề xuất, huấn luyện cuối | – | `2.6_2.7_pipeline.md` | – | – | Bản nháp; 2.7 chỉ vài dòng |
-| 2.8 | Phân tích lỗi, demo | – | **chưa có** | `scripts/analyze_errors.py`, `app.py` | `outputs/errors/` (chưa có ở máy này) | Code xong, chưa viết báo cáo |
+| 2.8 | Phân tích lỗi, demo | – | `2.8_danh_gia.md` | `scripts/analyze_errors.py`, `app.py` | `outputs/errors/` (chưa có ở máy này) | Code xong, báo cáo bản nháp |
 | 3 | Thảo luận, phân công, khai báo AI, Overleaf, slide | – | **chưa có** | – | – | Chưa làm |
 
 **Kết luận chính đến nay:** 0/16 cấu hình 3 seed "tốt hơn rõ" baseline về macro-F1 trên val (`hist_eq_L`, `stretch_L_1_99` tệ hơn rõ trên test), nên pipeline phân loại giữ nguyên baseline, thêm nhánh QC chỉ gắn cờ (2.6).
@@ -44,6 +45,7 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 | `2.2_eda_chat_luong_anh.ipynb` | 6,7 MB | 2 cách đo; 3.1–3.7 từng vấn đề (viền, sáng/tối, tương phản, sáng không đều, nhiễu, lông); 4 tổng hợp; 5 liên hệ lỗi CNN (`TODO`); 6–7 bảng kết luận | `outputs/eda/quality_metrics.csv` (sinh bởi `python -X utf8 -m src.eda.quality_metrics --jobs 8`) | `outputs/eda/*` (`image_flags.csv`, `problem_sets/`, `eda_conclusion.csv`, `table_*`), `outputs/figures/eda/` |
 | `2.3_2.4_du_lieu_baseline.ipynb` | 340 KB | 3 kiểm tra metadata; 4 mã hóa nhãn; 5 chia train/val/test; 6 WRS; 7 pipeline tốc độ; 8 cấu hình đóng băng; 9 huấn luyện; 10–11 kết quả 3 seed | `archive/` | `outputs/splits/`, `outputs/data_prep/`, `outputs/baseline/`, `outputs/figures/baseline/` |
 | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | – | Cùng khuôn: 1 mô tả; 2 chứng minh; 3 nhóm ảnh; 4 tỉ lệ; 5 phương pháp; 6 thực nghiệm 3 seed; 7 mẫu 100 ảnh trước/sau; 8 nhận xét | `outputs/eda/`, `outputs/preprocess/summary_*.csv`, `outputs/rerun_2.5/` | `outputs/rerun_2.5/<vấn đề>_sample100.csv`, `outputs/figures/rerun_2.5/` |
+| `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | Cùng khuôn: 1 vấn đề; 2 phương pháp và giả thuyết; 3 ảnh trước/sau; 4 train 3 seed; 5 so với baseline; 6 kết luận | `outputs/eda/image_flags.csv`, `outputs/splits/`, `outputs/runs_cl/` | `outputs/runs_cl/` |
 
 ## 4. Script và module
 
@@ -60,7 +62,9 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 | `scripts/run_problem_experiments.py` | Train lại nhiễu/tương phản: `smoke`, `all` (baseline + 6 cấu hình × 3 seed) |
 | `src/preprocess/figures.py` | Hình giai đoạn 1 của 2.5 |
 | `src/eda/quality_metrics.py`, `flags.py`, `stats.py`, `plots.py` | Bộ đo chất lượng, quy tắc gắn cờ, thống kê, style/màu 7 lớp |
+| `src/report/notebook_utils.py` | Hàm dùng chung cho notebook 2.5.3–2.5.6; kết quả ghi vào `outputs/runs_cl/` |
 | `src/report/data_tables.py` | Bảng số cho 2.1, 2.3, 2.4 |
+| `scripts/make_problem_notebooks.py` | Sinh khung notebook 2.5.3–2.5.6. **Ghi đè** cả output và mục 6 đã viết |
 | `scripts/make_splits.py` | Tái tạo split cố định |
 | `scripts/run_preprocess_experiments.py` | Train nhiễu/tương phản: `smoke`, `screen`, `confirm`, `run` |
 | `scripts/run_artifact_experiments.py` | Train lông/viền/gamma/flat: `smoke`, `all`, `run TÊN [seed…]` |

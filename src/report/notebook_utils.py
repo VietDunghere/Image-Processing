@@ -1,4 +1,4 @@
-"""Hàm dùng chung cho 4 notebook "một vấn đề – một notebook" (01_long … 04_vien_toi).
+"""Hàm dùng chung cho 4 notebook "một vấn đề – một notebook" (2.5.3_long … 2.5.6_vien_toi).
 
 Mỗi notebook: áp dụng xử lý ảnh → train ResNet-18 3 seed → so sánh với baseline cùng lần chạy → giải thích.
 Mọi kết quả của lần chạy này nằm trong RUN_ROOT (outputs/runs_cl), tách khỏi kết quả cũ (outputs/baseline,

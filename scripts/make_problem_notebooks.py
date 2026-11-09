@@ -1,4 +1,4 @@
-"""Sinh 4 notebook "một vấn đề – một notebook": 01_long, 02_sang_khong_deu, 03_qua_sang, 04_vien_toi.
+"""Sinh 4 notebook "một vấn đề – một notebook": 2.5.3_long, 2.5.4_sang_khong_deu, 2.5.5_qua_sang, 2.5.6_vien_toi.
 
     python -X utf8 scripts/make_problem_notebooks.py
 
@@ -68,7 +68,7 @@ COMMON_TRAIN_MD = """## 4. Áp dụng xử lý ảnh rồi train ResNet-18, 3 l�
 
 PROBLEM_TEXT = {
     "long": dict(
-        file="01_long.ipynb", title="Vấn đề 1 – Lông che phủ tổn thương",
+        file="2.5.3_long.ipynb", title="2.5.3 Lông che phủ tổn thương",
         problem="""## 1. Vấn đề (từ EDA, mục 2.2)
 
 - **Hiện tượng:** sợi lông (tóc) tối, mảnh (2–10 px), dài, đè lên da và tổn thương; che một phần mạng sắc tố và bờ tổn thương, tạo cạnh giả.
@@ -87,7 +87,7 @@ PROBLEM_TEXT = {
   - **H2:** black-hat bắt **mọi nét tối mảnh**, kể cả mạng sắc tố trong tổn thương (đặc trưng của `mel`) → bản áp **mọi ảnh** có nguy cơ xóa tín hiệu chẩn đoán, **hại recall `mel`**; bản **có điều kiện** ít rủi ro hơn vì chỉ đụng 10% ảnh.
   - **Hạn chế biết trước:** black-hat chỉ bắt nét **tối**; lông **trắng** (da đầu người lớn tuổi) không được xử lý và có thể làm inpainting lỗi."""),
     "sang_khong_deu": dict(
-        file="02_sang_khong_deu.ipynb", title="Vấn đề 2 – Sáng không đều",
+        file="2.5.4_sang_khong_deu.ipynb", title="2.5.4 Sáng không đều",
         problem="""## 1. Vấn đề (từ EDA, mục 2.2)
 
 - **Hiện tượng:** nền da tối dần về một góc hoặc về phía rìa, chuyển tiếp mềm (khác viền tối: chưa đen hẳn).
@@ -105,7 +105,7 @@ PROBLEM_TEXT = {
   - **H1:** cân bằng nền giúp CNN so sánh tổn thương với da xung quanh nhất quán hơn → kỳ vọng cải thiện **trên nhóm sáng không đều**.
   - **H2:** bản áp **mọi ảnh** đổi nhẹ cả ảnh bình thường (ảnh nào cũng có chút chênh sáng) → hiệu ứng toàn tập nhỏ, có thể lệch khỏi phân phối ImageNet; bản **có điều kiện** chỉ đổi 2,5% ảnh nên tác động toàn tập rất nhỏ."""),
     "qua_sang": dict(
-        file="03_qua_sang.ipynb", title="Vấn đề 3 – Quá sáng (bạc màu)",
+        file="2.5.5_qua_sang.ipynb", title="2.5.5 Quá sáng (bạc màu)",
         problem="""## 1. Vấn đề (từ EDA, mục 2.2)
 
 - **Hiện tượng:** nền da gần trắng, mất màu ("bạc"), mất vân da và chi tiết vùng sáng; tổn thương nhạt màu có bờ mờ.
@@ -124,7 +124,7 @@ PROBLEM_TEXT = {
   - **H2:** gamma cố định cho **mọi ảnh** làm tối cả ảnh bình thường (lệch phân phối) → có nguy cơ hại toàn tập.
   - **H3 (rủi ro):** một phần ảnh "bạc màu" đến từ **bản chất tổn thương** (nhạt, ít sắc tố – EDA 2.2); làm tối mạnh có thể xóa chính dấu hiệu đó."""),
     "vien_toi": dict(
-        file="04_vien_toi.ipynb", title="Vấn đề 4 – Viền tối do ống soi",
+        file="2.5.6_vien_toi.ipynb", title="2.5.6 Viền tối do ống soi",
         problem="""## 1. Vấn đề (từ EDA, mục 2.2)
 
 - **Hiện tượng:** bốn góc hoặc cả viền ảnh đen kịt, phần nhìn thấy có dạng tròn/bầu dục (khung kính dermoscopy).

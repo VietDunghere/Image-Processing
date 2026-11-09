@@ -61,3 +61,15 @@ streamlit run app.py                                                 # demo, c�
 ```
 
 Danh sách đầy đủ các lệnh và cấu hình thí nghiệm ở `AGENTS.md`.
+
+## Notebook từng vấn đề 2.5.3–2.5.6
+
+`2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb`. Mỗi notebook gồm các phần: vấn đề → phương pháp áp dụng → ảnh trước/sau → train 3 seed → so sánh với baseline (bảng, biểu đồ cột theo từng seed, theo lớp, trên nhóm ảnh có vấn đề) → kết luận và giải thích.
+
+- Kết quả của lần chạy này nằm trong `outputs/runs_cl/`, tách khỏi kết quả cũ. Cấu hình giữ nguyên siêu tham số đóng băng; chỉ bật `channels_last`, batch đánh giá 512 và 32 luồng tạo cache để chạy nhanh hơn trên RTX 5060 Ti.
+- Có thể train trước bằng terminal, rồi mở notebook để xem kết quả (ô train chỉ đọc lại kết quả đã có):
+  ```bash
+  python -X utf8 -c "import sys; sys.path.insert(0,'.'); from src.report import notebook_utils as U; [U.train(n) for n in ['baseline'] + [c for p in U.PROBLEMS.values() for c in p['configs']]]"
+  ```
+- Chọn kernel trỏ tới đúng môi trường của dự án. Chạy lần lượt từng notebook, không chạy song song, vì các notebook dùng chung baseline.
+- `scripts/make_problem_notebooks.py` sinh lại khung 4 notebook. **Lệnh này ghi đè** cả output và mục 6 đã viết.
