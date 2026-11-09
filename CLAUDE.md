@@ -52,7 +52,7 @@ Quy ước tên: tiền tố là số mục kế hoạch; notebook và báo cáo
 | 2.2 EDA | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/` | Xong, còn `TODO` liên hệ lỗi CNN |
 | 2.3 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | Xong |
 | 2.4 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.4_baseline.md` | `src/training.py` | Xong |
-| 2.5.1 nhiễu, 2.5.2 tương phản | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`) | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py` | Xong (3 seed), báo cáo đã cập nhật |
+| 2.5.1 nhiễu, 2.5.2 tương phản | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`); bản giải thích để trình bày: `2.5.1_2.5.2_nhieu_tuong_phan.md` | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `scripts/report_noise_contrast.py` | Xong (3 seed), báo cáo đã cập nhật |
 | 2.5b lông, viền, sáng | – | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/run_artifact_experiments.py` | Bản nháp |
 | 2.5.3–2.5.6 lông, sáng không đều, quá sáng, viền tối | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | `src/report/notebook_utils.py`, `scripts/make_problem_notebooks.py`, `src/preprocess/artifacts.py` | Có output 3 seed từ máy RTX 5060 Ti (`outputs/runs_cl/`) |
 | 2.5c tác động 4 tầng | – | – | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Dở |

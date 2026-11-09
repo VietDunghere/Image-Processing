@@ -26,7 +26,7 @@
 | 2.2 | EDA chất lượng ảnh | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/*` | `outputs/eda/`, `outputs/figures/eda/` | Xong, trừ cột "Liên quan lỗi CNN?" còn `TODO` |
 | 2.3 | Làm sạch, chia tập, WRS | `2.3_2.4_du_lieu_baseline.ipynb` (mục 3–6) | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | `outputs/splits/`, `outputs/data_prep/` | Xong |
 | 2.4 | Baseline ResNet-18, 3 seed | `2.3_2.4_du_lieu_baseline.ipynb` (mục 7–11) | `2.4_baseline.md` | `src/training.py` | `outputs/baseline/`, `outputs/figures/baseline/` | Xong |
-| 2.5.1, 2.5.2 | Nhiễu Gauss; tương phản thấp (chạy lại) | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`) | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `src/preprocess/{noise,contrast,compare,subgroup}.py` | `outputs/rerun_2.5/`, `outputs/figures/rerun_2.5/` | Xong (3 seed), báo cáo đã cập nhật |
+| 2.5.1, 2.5.2 | Nhiễu Gauss; tương phản thấp (chạy lại) | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`); bản giải thích để trình bày: `2.5.1_2.5.2_nhieu_tuong_phan.md` | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `scripts/report_noise_contrast.py`, `src/preprocess/{noise,contrast,compare,subgroup}.py` | `outputs/rerun_2.5/`, `outputs/figures/rerun_2.5/`, `reports/figures/2.5.1_2.5.2/` | Xong (3 seed), báo cáo đã cập nhật |
 | 2.5b | Lông, viền tối, quá sáng, sáng không đều | – (script) | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/{run_artifact_experiments,analyze_artifacts,artifact_constants}.py` | `outputs/preprocess_artifacts/` (máy khác) | Bản nháp, số từ máy RTX 5060 Ti |
 | 2.5.3–2.5.6 | Lông, sáng không đều, quá sáng, viền tối (mỗi vấn đề một notebook) | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | `src/report/notebook_utils.py`, `scripts/make_problem_notebooks.py`, `src/preprocess/artifacts.py` | `outputs/runs_cl/` (máy khác) | Có output 3 seed từ máy RTX 5060 Ti |
 | 2.5c | Tác động theo 4 tầng: ảnh, dự đoán, stress test, Grad-CAM | – (script) | – | `src/preprocess/degrade.py`, `scripts/impact_*.py` | `outputs/impact/`, `outputs/figures/impact/` | **Dở**: tầng A xong |
@@ -60,6 +60,7 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 | `src/preprocess/subgroup.py` | Phân tích trên nhóm ảnh có vấn đề (DiD, chuyển đúng/sai) |
 | `src/preprocess/problem_report.py` | Hàm dùng chung cho notebook 2.5.1, 2.5.2; lượt chạy lại ghi vào `outputs/rerun_2.5/` |
 | `scripts/run_problem_experiments.py` | Train lại nhiễu/tương phản: `smoke`, `all` (baseline + 6 cấu hình × 3 seed) |
+| `scripts/report_noise_contrast.py` | `figures`: tách hình 2.5.1, 2.5.2 từ output notebook và vẽ cột accuracy theo seed; `check`: chạy hàm xử lý ảnh trên `samples/` và ảnh tổng hợp |
 | `src/preprocess/figures.py` | Hình giai đoạn 1 của 2.5 |
 | `src/eda/quality_metrics.py`, `flags.py`, `stats.py`, `plots.py` | Bộ đo chất lượng, quy tắc gắn cờ, thống kê, style/màu 7 lớp |
 | `src/report/notebook_utils.py` | Hàm dùng chung cho notebook 2.5.3–2.5.6; kết quả ghi vào `outputs/runs_cl/` |
