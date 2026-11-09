@@ -50,6 +50,10 @@ display(U.per_class(NAMES, "test"))
 print("Trên CHÍNH nhóm ảnh có vấn đề (cờ EDA) so với phần còn lại")
 display(pd.concat([U.subgroup(NAMES, P["flag"], "test"), U.subgroup(NAMES, P["flag"], "val")], ignore_index=True))'''
 
+SUBBARS = '''# Accuracy trên TẬP CON ẢNH CÓ VẤN ĐỀ, theo từng lần chạy (seed) – test và val
+U.fig_subgroup_seed_bars(NAMES, P["flag"], "test", stem=f"{PROBLEM}_bars_subgroup_test_acc")
+U.fig_subgroup_seed_bars(NAMES, P["flag"], "val", stem=f"{PROBLEM}_bars_subgroup_val_acc");'''
+
 VERDICT = '''for split, tab in (("test", T), ("val", Tv)):
     for name in P["configs"]:
         display(Markdown("- " + U.verdict_text(tab, name, split)))'''
@@ -173,6 +177,7 @@ Quy tắc chọn ảnh (cố định, không chọn ảnh "đẹp"): trong nhóm
     C.append(nbf.v4.new_code_cell(BARS))
     C.append(nbf.v4.new_markdown_cell("### 5.2 Theo lớp và trên chính nhóm ảnh có vấn đề"))
     C.append(nbf.v4.new_code_cell(DETAIL))
+    C.append(nbf.v4.new_code_cell(SUBBARS))
     C.append(nbf.v4.new_markdown_cell("### 5.3 Kết luận tự động từ số liệu (theo quy tắc ở đầu notebook)"))
     C.append(nbf.v4.new_code_cell(VERDICT))
     C.append(nbf.v4.new_markdown_cell("""## 6. Kết luận và giải thích

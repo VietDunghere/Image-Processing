@@ -206,6 +206,45 @@ def fig_seed_bars(names, split="test", metric="macro_f1", stem=None):
     return fig
 
 
+def fig_subgroup_seed_bars(names, flag, split="test", stem=None):
+    """Biểu đồ cột nhóm cho ACCURACY TRÊN TẬP CON ẢNH CÓ VẤN ĐỀ (cờ EDA): trục x = seed 42 / 43 / 44 và 'TB 3 seed',
+    mỗi nhóm 1 cột cho mỗi cấu hình; cột TB có thanh ±1 std; đường chấm = accuracy baseline trên tập con."""
+    setup_style()
+    fl = pd.read_csv("outputs/eda/image_flags.csv").set_index("image_id")
+    vals = {}
+    for n in names:
+        P = preds(n, split)
+        g = fl.loc[P[42].index, flag].to_numpy(bool)
+        vals[n] = np.array([P[s].loc[P[42].index, "correct"].to_numpy()[g].mean() for s in SEEDS])
+    groups = [f"seed {s}" for s in SEEDS] + ["TB 3 seed"]
+    w = 0.8 / len(names)
+    fig, ax = plt.subplots(figsize=(7.5, 3.6))
+    for i, n in enumerate(names):
+        v = vals[n]
+        h = list(v) + [v.mean()]
+        x = np.arange(len(groups)) + (i - (len(names) - 1) / 2) * w
+        ax.bar(x, h, w * 0.95, color=color(n, names), label=n, alpha=0.9)
+        sd = v.std(ddof=1)
+        ax.errorbar(x[-1], h[-1], yerr=sd, color="k", capsize=3, lw=1)
+        for j, (xi, hi) in enumerate(zip(x, h)):
+            top = hi + (sd if j == len(h) - 1 else 0)
+            ax.text(xi, top + 0.003, f"{hi:.3f}", ha="center", va="bottom", fontsize=6.5, rotation=90)
+    ax.axhline(vals["baseline"].mean(), color="#7A7A7A", ls=":", lw=1)
+    lo = min(v.min() for v in vals.values())
+    hi = max(v.max() for v in vals.values())
+    ax.set_ylim(max(0, lo - 0.08), min(1.0, hi + 0.08))
+    ax.set_xticks(range(len(groups)), groups)
+    n_img = int(fl.loc[preds(names[0], split)[42].index, flag].sum())
+    ax.set_ylabel(f"accuracy trên tập con ({split})")
+    ax.set_title(f"Accuracy trên tập con ảnh có vấn đề ({flag}, n = {n_img} ảnh {split}) theo từng lần chạy; "
+                 f"cột TB có thanh ±1 std", fontsize=8.5)
+    ax.legend(fontsize=7, ncol=len(names), loc="upper center", bbox_to_anchor=(0.5, -0.12))
+    fig.tight_layout()
+    if stem:
+        savefig(fig, stem)
+    return fig
+
+
 def fig_before_after(problem, n_examples=3, stem=None):
     """Ảnh trước/sau: trong nhóm cờ ∩ train_fit, ảnh có chỉ số gần trung vị, gần phân vị 90 và lớn nhất (quy tắc cố định)."""
     P = PROBLEMS[problem]
