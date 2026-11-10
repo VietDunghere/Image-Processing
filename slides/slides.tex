@@ -160,8 +160,8 @@ MobileNetV3-S & $1{,}53$M & $0{,}6842$ & $0{,}6320$ \\
 \footnotesize
 \begin{itemize}
     \item \textbf{ResNet-18 Baseline:} Val F1 $= 0{,}7254 \pm 0{,}0044$; Test F1 $= \mathbf{0{,}6941 \pm 0{,}0160}$; bAcc $= 0{,}6777 \pm 0{,}0194$; Acc $= 0{,}8315 \pm 0{,}0032$.
-    \item Cấu hình đóng băng: $224{\times}224$, AdamW $\text{lr}=10^{-4}$, batch $32$, $20$ epoch, chọn epoch theo \texttt{val} F1.
-    \item Giữ cố định \textbf{ResNet-18} cho toàn bộ 16 thí nghiệm mục 2.5 để kiểm soát biến tuyệt đối \& trích Grad-CAM \texttt{layer4}.
+    \item Chọn trên \texttt{val}: \textbf{ResNet-18} có độ lệch chuẩn thấp hơn $3{,}3\times$ so với \texttt{EfficientNet-B0} ($0{,}0044$ vs $0{,}0146$) và tầng \texttt{layer4} $7{\times}7$ chuẩn cho Grad-CAM.
+    \item Giữ cố định \textbf{ResNet-18} cho toàn bộ 16 thí nghiệm mục 2.5 để kiểm soát biến tuyệt đối.
 \end{itemize}
 \end{column}
 \end{columns}
@@ -193,7 +193,7 @@ MobileNetV3-S & $1{,}53$M & $0{,}6842$ & $0{,}6320$ \\
 \footnotesize
 \begin{itemize}
     \item Resize $600{\rightarrow}224$ đã hạ $\sigma$ nhiễu; \texttt{median5} xóa $75\%$ chi tiết Laplacian tổn thương.
-    \item \alert{\texttt{hist\_eq\_L} \& \texttt{stretch\_L\_1\_99}} nhân nhiễu $\times 3{,}5\text{--}5{,}5$ và làm lệch màu $\Delta E_{76} = 14\text{--}22$ trên $95{,}7\%$ ảnh thường!
+    \item \alert{\texttt{hist\_eq\_L} \& \texttt{stretch\_L\_1\_99}} nhân nhiễu $\times 3{,}5\text{--}5{,}5$ và làm biến thiên độ chói $\Delta E_{76} = 14\text{--}22$ ($\Delta L^*$) trên $95{,}7\%$ ảnh thường!
 \end{itemize}
 \end{column}
 \end{columns}
@@ -238,8 +238,8 @@ MobileNetV3-S & $1{,}53$M & $0{,}6842$ & $0{,}6320$ \\
 \footnotesize
 \begin{enumerate}
     \item \textbf{Tầng A (Ảnh):} Triệt tiêu $92\%\text{--}100\%$ cờ EDA mục tiêu, nhưng CNN fine-tune toàn mạng có \texttt{BatchNorm} đã tự bù biến thiên sáng nhẹ.
-    \item \textbf{Tầng B (Đổi nhãn):} Hai seed baseline tự bất đồng $\approx 11\%\text{--}12\%$ ảnh; các bản \texttt{\_cond} nằm sát mức nền này.
-    \item \textbf{Tầng C (Stress Test):} Khi suy giảm ngoại lai nặng (viền đen lớn, lông dày, nhiễu cao), tiền xử lý \textbf{giúp phục hồi rõ rệt F1}!
+    \item \textbf{Tầng B (Đổi nhãn):} Hai seed baseline tự bất đồng $15{,}3\%$ ảnh test; \texttt{vig\_fill, flat\_cond} sát nền, riêng \texttt{gamma\_L\_auto} vọt $+20{,}5\%$ trên nhóm quá sáng.
+    \item \textbf{Tầng C (Stress Test):} Khi suy giảm ngoại lai nặng (viền lớn, lông dày, mất tương phản), nhánh \texttt{test\_only} \textbf{phục hồi mạnh F1} ($+0{,}10$ đến $+0{,}46$)!
     \item \textbf{Tầng D (Grad-CAM \texttt{layer4}):} Giảm chú ý vào viền/lông ở biên, giữ ổn định trọng tâm tổn thương.
 \end{enumerate}
 \end{column}

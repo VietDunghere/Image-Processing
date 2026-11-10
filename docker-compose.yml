@@ -1,0 +1,21 @@
+services:
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xla-ham10000-demo:latest
+    container_name: xla-ham10000-demo
+    # Chỉ mở trên loopback localhost (127.0.0.1), không phơi cổng ra mạng ngoài
+    ports:
+      - "127.0.0.1:8501:8501"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      - MPLCONFIGDIR=/tmp/matplotlib
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    restart: unless-stopped

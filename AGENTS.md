@@ -77,23 +77,24 @@ Notebook đã chạy sẵn và có output. **Không mở cả file** vì rất n
 | `scripts/impact_gradcam.py` | 2.5c tầng D: `run`, `analyze` |
 | `scripts/bench_*.py` | Đo tốc độ train, chỉ để tham khảo |
 | `scripts/make_samples.py` | Chép 7 ảnh mẫu vào `samples/` |
-| `app.py` | Demo Streamlit: QC → các bước xử lý → dự đoán (`streamlit run app.py`) |
+| `app.py`, `Dockerfile`, `docker-compose.yml` | Demo Streamlit 3 tab (thuần RAM qua `compute_from_rgb`/`analyze_rgb`, fallback bảng qua `demo_assets/`) & container Docker bảo mật (`docker compose up --build -d`) |
 
-## 5. `outputs/` (không commit, có thể khác giữa các máy)
+## 5. `outputs/` (không commit) và `demo_assets/` (commit kèm repo)
 
 | Thư mục | Nội dung |
 |---|---|
 | `splits/` | `train_fit`, `val`, `test` (dùng cho thí nghiệm), `train` = `train_fit` + `val`. **Không tạo split mới** |
-| `baseline/` | `config.json`, `summary*.csv`, `seed{42,43,44}/{metrics.json,history.csv,val_preds.csv,test_preds.csv}` |
-| `experiments/<tên>/` | Cùng cấu trúc baseline. 3 seed: `median3`, `clahe_L_c2_t8`, `median3+clahe_L_c2_t8`, `vig_fill`, `gamma_L_auto`, `flat_L_s60_cond`, `hair_bh17_cond`, `hair_bh17`. 1 seed: `gauss3`, `median5`, `stretch_L_1_99`, `hist_eq_L`. `flat_L_s60`: **chưa có kết quả** |
-| `rerun_2.5/` | Lượt chạy lại nhiễu/tương phản, có baseline và `checkpoints/` riêng; không ghép Δ với `baseline/` ở trên |
-| `checkpoints/` | `<tên>_seed<s>.pt` |
+| `baseline/` | `config.json`, `summary*.csv`, `seed{42,43,44}/{metrics.json,history.csv,val_preds.csv,test_preds.csv}` (đồng bộ NVIDIA L40S) |
+| `experiments/<tên>/`, `runs_cl/<tên>/`, `rerun_2.5/<tên>/` | Đủ 3 seed (`42, 43, 44`) cho toàn bộ 16 cấu hình tiền xử lý trên cùng phần cứng L40S |
+| `backbones/` | Khảo sát 3 kiến trúc CNN (`resnet18`, `efficientnet_b0`, `mobilenet_v3_small` × 3 seed) và `comparison_{val,test}.csv` |
+| `checkpoints/` | `<tên>_seed<s>.pt` (demo dùng `baseline_seed42.pt`) |
 | `cache/` | Ảnh 224 uint8 đã xử lý, khoảng 1,5 GB/cấu hình |
-| `eda/` | Chỉ số từng ảnh, cờ, nhóm vấn đề, bảng kết luận |
-| `preprocess/` | Kết quả 2.5a, `comparison_{val,test}.csv`, `subgroup/` |
-| `impact/` | Kết quả 2.5c; `_smoke/` chỉ là chạy thử |
-| `figures/{eda,baseline,preprocess,impact}/` | Hình cho báo cáo |
-| `report_tables/` | Bảng cho 2.1, 2.3 |
+| `eda/` | Chỉ số từng ảnh, cờ, nhóm vấn đề, `eda_conclusion.csv` (đã điền liên hệ lỗi CNN) |
+| `preprocess/`, `preprocess_artifacts/` | Kết quả 2.5a, 2.5b, `all16_comparison_{val,test}.csv`, `subgroup.csv`, `lowcontrast_mask_audit.csv` |
+| `impact/`, `errors/` | Kết quả 4 tầng 2.5c (`image_level`, `flips_excess`, `stress_delta`, `gradcam_*`) và phân tích lỗi 2.8 |
+| `figures/{eda,baseline,preprocess,impact,errors}/` | Hình cho báo cáo, Overleaf và Slide |
+| `report_tables/` | Bảng cho 2.1, 2.3, 2.4 |
+| `demo_assets/` (commit) | Bản sao nhẹ (~47 KB) của `all16_comparison_{val,test}.csv` và `backbones_comparison_{val,test}.csv` để `app.py`/Docker chạy trên máy mới không cần thư mục `outputs/` |
 
 ## 6. Cấu hình cố định
 
@@ -128,10 +129,9 @@ $PY -X utf8 scripts/run_artifact_experiments.py run <tên> 42 43 44
 ## 9. Bẫy cần tránh
 
 - **Đừng sửa mã nguồn hoặc docstring của hàm tiền xử lý đã có cache** (`noise.py`, `contrast.py`, `artifacts.py`). `fn_fingerprint` băm mã nguồn hàm, nên sửa sẽ làm cache sai fingerprint và tính lại. Ngược lại, sửa **hàm phụ** mà hàm chính gọi thì fingerprint không đổi, nên cache cũ vẫn được dùng; khi đó phải xóa cache thủ công. Đó cũng là lý do `tailieu/DoAn_XuLyAnh.pdf` giữ nguyên tên: docstring của `clahe_L` nhắc tới nó.
-- **Hai bộ baseline khác máy, không ghép Δ chéo.** Máy này (RTX 3050): test macro-F1 0,6805 ± 0,0192. `2.5b`, `2.6`, `2.7` dùng 0,6785 ± 0,0263 (RTX 5060 Ti). `app.py` dùng checkpoint máy này, nên số ở `2.7` không khớp.
+- **Đã thống nhất 100% baseline trên NVIDIA L40S:** Toàn bộ `baseline`, 16 cấu hình tiền xử lý và 3 kiến trúc CNN đều dùng chung mốc ResNet-18 `val` `0,7254 ± 0,0044`, `test` `0,6941 ± 0,0160` (không còn tình trạng lệch 2–4 bộ baseline giữa RTX 3050 / RTX 5060 Ti trước đây; file lịch sử `reports/_handoff_2.5c.md` chỉ giữ lại để tra cứu quá trình).
 - **Cấu hình kết hợp `"a+b"` luôn bị tính lại cache.** Fingerprint của nó chứa địa chỉ bộ nhớ của hàm, nên khác nhau mỗi lần chạy (ví dụ `median3+clahe_L_c2_t8`). Đây là hành vi sẵn có của `fn_fingerprint`, không phải lỗi dữ liệu.
-- **Chạy tác vụ nặng lần lượt.** RAM 23,7 GB; hai tác vụ song song từng bị hệ thống dừng vì thiếu bộ nhớ. Mỗi cache nạp vào RAM khoảng 1,5 GB.
+- **Chạy tác vụ nặng lần lượt.** Mỗi cache nạp vào RAM khoảng 1,5 GB.
 - **Hỏi người dùng trước khi train lâu**; chạy thử tập nhỏ trước. Không commit/push khi chưa được yêu cầu.
-- **Test không dùng để chọn phương pháp.** Chia theo `lesion_id`; thống kê lỗi chỉ dùng dự đoán ngoài mẫu.
+- **Test không dùng để chọn phương pháp hay chọn kiến trúc.** Mọi quyết định chọn ResNet-18 (2.4, 2.7) và chọn bước tiền xử lý (2.6) đều dựa trên tập `val`; chia theo `lesion_id`; thống kê lỗi chỉ dùng dự đoán ngoài mẫu.
 - Mọi số trong báo cáo phải truy ngược được về file trong `outputs/`.
-- Notebook 2.2 mục 5 đang tìm `outputs/baseline/predictions*.csv`, trong khi dự đoán thật nằm ở `outputs/baseline/seed*/test_preds.csv`.

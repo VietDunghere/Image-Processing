@@ -16,8 +16,8 @@ Chạy thử nghiệm cục bộ (bắt buộc bind localhost khi kiểm thử):
 from __future__ import annotations
 
 import io
+import os
 import sys
-import tempfile
 from pathlib import Path
 
 import cv2
@@ -33,22 +33,46 @@ from torchvision import models
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-from src.eda.quality_metrics import analyze_image, compute_one  # noqa: E402
+from src.eda.quality_metrics import analyze_rgb, compute_from_rgb  # noqa: E402
 from src.preprocess import CANDIDATES, get_preprocess  # noqa: E402
 from src.preprocess.degrade import LEVELS, degrade  # noqa: E402
 from src.training import CLASSES, IMAGENET_MEAN, IMAGENET_STD, IMG_SIZE  # noqa: E402
 
-# TODO(security): Ứng dụng chạy offline phục vụ báo cáo học thuật trên localhost (127.0.0.1).
-# Nếu triển khai công khai lên môi trường mạng, cần bổ sung lớp reverse-proxy TLS kèm xác thực OAuth2/OIDC,
+# TODO(security): Ứng dụng chạy offline phục vụ báo cáo học thuật trên localhost (127.0.0.1) hoặc container nội bộ.
+# Nếu triển khai công khai lên môi trường mạng, cần bổ sung lớp reverse-proxy TLS kèm xác thực OAuth2/OIDC (MFA),
 # giới hạn tần suất request (rate limiting), quét mã độc tệp tải lên trong sandbox và cấu hình header bảo mật
 # nghiêm ngặt (Content-Security-Policy, X-Frame-Options: DENY, X-Content-Type-Options: nosniff).
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # Giới hạn 10 MB chống tấn công cạn kiệt bộ nhớ (DoS)
 ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG"}
 MAX_IMAGE_PIXELS = 25_000_000
 
-CKPT = ROOT / "outputs/checkpoints/baseline_seed42.pt"
 SAMPLES_DIR = (ROOT / "samples").resolve()
-SRC_SIZE = (600, 450)  # Kích thước chuẩn HAM10000 mà các ngưỡng EDA được thiết lập
+DEMO_ASSETS_DIR = (ROOT / "demo_assets").resolve()
+SRC_SIZE = (600, 450)  # Kích thước chuẩn HAM10000 (4:3) mà các ngưỡng EDA được thiết lập
+
+
+def resolve_checkpoint() -> Path:
+    """Ưu tiên biến môi trường XLA_CHECKPOINT_PATH -> outputs/checkpoints -> demo_assets (chống Path Traversal)."""
+    env_p = os.environ.get("XLA_CHECKPOINT_PATH", "").strip()
+    if env_p:
+        p = Path(env_p).resolve()
+        if p.is_file() and p.suffix == ".pt":
+            return p
+    for rel in ("outputs/checkpoints/baseline_seed42.pt", "demo_assets/baseline_seed42.pt"):
+        p = (ROOT / rel).resolve()
+        if p.is_file():
+            return p
+    return ROOT / "outputs/checkpoints/baseline_seed42.pt"
+
+
+def resolve_table(out_rel: str, asset_name: str) -> Path | None:
+    for p in (ROOT / out_rel, DEMO_ASSETS_DIR / asset_name):
+        if p.is_file():
+            return p
+    return None
+
+
+CKPT = resolve_checkpoint()
 
 CLASS_NAMES = {
     "akiec": "Dày sừng quang hóa / bệnh Bowen (akiec)",
@@ -187,10 +211,24 @@ def overlay_cam(rgb: np.ndarray, cam_norm: np.ndarray) -> np.ndarray:
 
 
 def qc_metrics(rgb: np.ndarray) -> dict:
-    with tempfile.NamedTemporaryFile(suffix=".png") as f:
-        cv2.imwrite(f.name, cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
-        rec, _ = compute_one(f.name)
+    rec, _ = compute_from_rgb(rgb)
     return rec
+
+
+def crop_to_aspect_4_3(rgb: np.ndarray) -> np.ndarray:
+    """Cắt đồng tâm về đúng tỉ lệ khung hình 4:3 trước khi thu phóng về 600×450 để tránh méo hình học tổn thương."""
+    h, w = rgb.shape[:2]
+    target_ratio = SRC_SIZE[0] / SRC_SIZE[1]  # 4 / 3
+    cur_ratio = w / max(h, 1)
+    if abs(cur_ratio - target_ratio) < 1e-2:
+        return rgb
+    if cur_ratio > target_ratio:
+        new_w = max(1, int(round(h * target_ratio)))
+        x0 = (w - new_w) // 2
+        return rgb[:, x0:x0 + new_w]
+    new_h = max(1, int(round(w / target_ratio)))
+    y0 = (h - new_h) // 2
+    return rgb[y0:y0 + new_h, :]
 
 
 def lab_delta_e(a: np.ndarray, b: np.ndarray) -> float:
@@ -202,10 +240,8 @@ def lab_delta_e(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def plot_hist_and_masks(orig: np.ndarray, proc: np.ndarray):
-    with tempfile.NamedTemporaryFile(suffix=".png") as f:
-        cv2.imwrite(f.name, cv2.cvtColor(orig, cv2.COLOR_RGB2BGR))
-        info = analyze_image(f.name)
-    g0 = cv2.cvtColor(orig, cv2.COLOR_RGB2GRAY)
+    info = analyze_rgb(orig)
+    g0 = info["gray"]
     g1 = cv2.cvtColor(proc, cv2.COLOR_RGB2GRAY)
     fov = info["fov"]
 
@@ -250,18 +286,19 @@ st.warning(
     "thông thường lệch miền dữ liệu nên chỉ mang tính minh họa định tính các bước xử lý ảnh."
 )
 
-if not CKPT.exists():
-    st.error(
-        f"Chưa tìm thấy checkpoint mô hình tại `{CKPT}`. "
-        "Hãy chạy huấn luyện baseline trước: `python -X utf8 scripts/run_artifact_experiments.py run baseline 42`."
+has_ckpt = CKPT.is_file()
+model, dev, best_epoch = (load_model() if has_ckpt else (None, torch.device("cpu"), None))
+if not has_ckpt:
+    st.info(
+        f"ℹ️ Chưa tìm thấy tệp trọng số CNN tại `{CKPT}`. Giao diện đang chạy ở **chế độ Kiểm tra chất lượng ảnh (QC), "
+        "Xử lý ảnh cổ điển & Bảng tổng hợp 3 seed**. Để bật suy luận ResNet-18 & Grad-CAM, hãy đặt `baseline_seed42.pt` "
+        "vào `outputs/checkpoints/` (hoặc chạy qua Docker image đã đóng gói sẵn)."
     )
-    st.stop()
-
-model, dev, best_epoch = load_model()
 
 with st.sidebar:
     st.header("1. Nguồn ảnh đầu vào")
     up = st.file_uploader("Tải ảnh (JPG/PNG, tối đa 10 MB)", type=["jpg", "jpeg", "png"])
+    keep_ratio_upload = st.checkbox("Giữ tỉ lệ khung 4:3 (cắt tâm chống méo hình khi tải ảnh ngoài)", value=True)
     samples = sorted(SAMPLES_DIR.glob("*.jpg")) if SAMPLES_DIR.exists() else []
     default_idx = 1 if samples else 0
     pick = st.selectbox("…hoặc chọn ảnh mẫu tập test (`samples/`)", ["(không)"] + [p.name for p in samples], index=default_idx)
@@ -286,7 +323,10 @@ with st.sidebar:
         )
 
     st.divider()
-    st.caption(f"**Mô hình nhánh (B):** ResNet-18 baseline · seed 42 · epoch tốt nhất {best_epoch} · thiết bị `{dev.type}`.")
+    if has_ckpt:
+        st.caption(f"**Mô hình nhánh (B):** ResNet-18 baseline · seed 42 · epoch tốt nhất {best_epoch} · thiết bị `{dev.type}`.")
+    else:
+        st.caption("**Mô hình nhánh (B):** Chưa nạp checkpoint (`baseline_seed42.pt`).")
     st.caption(
         "**Nhóm thực hiện (PTIT):** Nguyễn Trung Nam (`B23DCVT299`) · Phan Nguyễn Việt Dũng (`B23DCCN210`) · "
         "Lê Duy Anh (`B23DCCN026`) · Đinh Khánh Sơn (`B23DCDT223`) · Đào Phạm Bích Ngọc (`B23DCVT308`)."
@@ -313,11 +353,13 @@ else:
     st.stop()
 
 if rgb_raw.shape[1::-1] != SRC_SIZE:
+    rgb_src = crop_to_aspect_4_3(rgb_raw) if (up is not None and keep_ratio_upload) else rgb_raw
+    crop_note = " (cắt đồng tâm 4:3 trước khi thu phóng)" if (up is not None and keep_ratio_upload) else ""
     st.caption(
-        f"ℹ️ Ảnh đầu vào kích thước `{rgb_raw.shape[1]}×{rgb_raw.shape[0]}` được đưa về chuẩn `{SRC_SIZE[0]}×{SRC_SIZE[1]}` "
-        "của HAM10000 để bộ đo QC và tham số hình thái học vận hành đúng tỉ lệ thiết kế."
+        f"ℹ️ Ảnh đầu vào kích thước `{rgb_raw.shape[1]}×{rgb_raw.shape[0]}` được đưa về chuẩn `{SRC_SIZE[0]}×{SRC_SIZE[1]}`"
+        f"{crop_note} của HAM10000 để bộ đo QC và tham số hình thái học vận hành đúng tỉ lệ thiết kế."
     )
-    rgb = np.asarray(Image.fromarray(rgb_raw).resize(SRC_SIZE, Image.BILINEAR))
+    rgb = np.asarray(Image.fromarray(rgb_src).resize(SRC_SIZE, Image.BILINEAR))
 else:
     rgb = rgb_raw
 
@@ -337,8 +379,8 @@ for s in steps:
 
 m_before = qc_metrics(rgb)
 m_after = qc_metrics(cur) if not np.array_equal(cur, rgb) else m_before
-p0 = predict_probs(rgb, model, dev)
-p1 = predict_probs(cur, model, dev)
+p0 = predict_probs(rgb, model, dev) if has_ckpt else None
+p1 = predict_probs(cur, model, dev) if has_ckpt else None
 
 tab_pipe, tab_stages, tab_cam = st.tabs([
     "📊 1. Pipeline Đề xuất: QC & Dự đoán (2.6–2.8)",
@@ -348,10 +390,12 @@ tab_pipe, tab_stages, tab_cam = st.tabs([
 
 # ============================================================================== TAB 1
 with tab_pipe:
-    if true_dx is not None:
+    if true_dx is not None and p0 is not None:
         pred_main = CLASSES[int(p0.argmax())]
         match_txt = "✅ Khớp nhãn thật" if pred_main == true_dx else "❌ Lệch nhãn thật"
         st.success(f"**Ảnh mẫu từ tập Test:** `{pick}` · **Nhãn thật:** `{true_dx}` – {CLASS_NAMES[true_dx]} · **{match_txt}**")
+    elif true_dx is not None:
+        st.success(f"**Ảnh mẫu từ tập Test:** `{pick}` · **Nhãn thật:** `{true_dx}` – {CLASS_NAMES[true_dx]}")
 
     st.subheader("(A) Nhánh Kiểm tra Chất lượng ảnh (QC – Bộ phát hiện EDA mục 2.2)")
     qc_rows = []
@@ -377,35 +421,38 @@ with tab_pipe:
     )
 
     st.subheader("(B) Dự đoán của ResNet-18 Baseline")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        top0 = CLASSES[int(p0.argmax())]
-        st.markdown(f"#### Kết quả chính – Trên ảnh đầu vào: `{top0}` ({p0.max():.1%})")
-        st.caption(CLASS_NAMES[top0])
-        df_p0 = pd.DataFrame({"Lớp": CLASSES, "Xác suất": p0}).set_index("Lớp")
-        st.bar_chart(df_p0)
-    with col_b:
-        top1 = CLASSES[int(p1.argmax())]
-        same_img = np.array_equal(cur, rgb)
-        tag_cmp = "không đổi pixel → trùng kết quả chính" if same_img else f"`{top1}` ({p1.max():.1%})"
-        st.markdown(f"#### Đối chiếu – Trên ảnh sau xử lý minh họa: {tag_cmp}")
-        st.caption(CLASS_NAMES[top1])
-        df_p1 = pd.DataFrame({"Lớp": CLASSES, "Xác suất": p1}).set_index("Lớp")
-        st.bar_chart(df_p1)
+    if p0 is not None and p1 is not None:
+        col_a, col_b = st.columns(2)
+        with col_a:
+            top0 = CLASSES[int(p0.argmax())]
+            st.markdown(f"#### Kết quả chính – Trên ảnh đầu vào: `{top0}` ({p0.max():.1%})")
+            st.caption(CLASS_NAMES[top0])
+            df_p0 = pd.DataFrame({"Lớp": CLASSES, "Xác suất": p0}).set_index("Lớp")
+            st.bar_chart(df_p0)
+        with col_b:
+            top1 = CLASSES[int(p1.argmax())]
+            same_img = np.array_equal(cur, rgb)
+            tag_cmp = "không đổi pixel → trùng kết quả chính" if same_img else f"`{top1}` ({p1.max():.1%})"
+            st.markdown(f"#### Đối chiếu – Trên ảnh sau xử lý minh họa: {tag_cmp}")
+            st.caption(CLASS_NAMES[top1])
+            df_p1 = pd.DataFrame({"Lớp": CLASSES, "Xác suất": p1}).set_index("Lớp")
+            st.bar_chart(df_p1)
 
-    comp_df = pd.DataFrame({
-        "Mã lớp": CLASSES,
-        "Chẩn đoán": [CLASS_NAMES[c] for c in CLASSES],
-        "P(ảnh đầu vào)": [round(float(x), 4) for x in p0],
-        "P(sau xử lý)": [round(float(x), 4) for x in p1],
-        "Δ xác suất": [round(float(b - a), 4) for a, b in zip(p0, p1)],
-    }).sort_values("P(ảnh đầu vào)", ascending=False).reset_index(drop=True)
-    with st.expander("Xem bảng chi tiết xác suất 7 lớp (trước & sau xử lý)"):
-        st.dataframe(comp_df, hide_index=True, width="stretch")
-        st.caption(
-            "Lưu ý phương pháp luận: checkpoint baseline được huấn luyện trên ảnh gốc không xử lý. Phép so sánh công bằng "
-            "(huấn luyện lại mô hình trên chính ảnh đã xử lý với 3 seed 42, 43, 44) được trình bày ở Tab 3 và mục 2.5 của báo cáo."
-        )
+        comp_df = pd.DataFrame({
+            "Mã lớp": CLASSES,
+            "Chẩn đoán": [CLASS_NAMES[c] for c in CLASSES],
+            "P(ảnh đầu vào)": [round(float(x), 4) for x in p0],
+            "P(sau xử lý)": [round(float(x), 4) for x in p1],
+            "Δ xác suất": [round(float(b - a), 4) for a, b in zip(p0, p1)],
+        }).sort_values("P(ảnh đầu vào)", ascending=False).reset_index(drop=True)
+        with st.expander("Xem bảng chi tiết xác suất 7 lớp (trước & sau xử lý)"):
+            st.dataframe(comp_df, hide_index=True, width="stretch")
+            st.caption(
+                "Lưu ý phương pháp luận: checkpoint baseline được huấn luyện trên ảnh gốc không xử lý. Phép so sánh công bằng "
+                "(huấn luyện lại mô hình trên chính ảnh đã xử lý với 3 seed 42, 43, 44) được trình bày ở Tab 3 và mục 2.5 của báo cáo."
+            )
+    else:
+        st.warning("Chưa nạp tệp `baseline_seed42.pt` nên tạm ẩn phần dự đoán xác suất CNN.")
 
 # ============================================================================== TAB 2
 with tab_stages:
@@ -431,58 +478,64 @@ with tab_stages:
     c_m1, c_m2, c_m3 = st.columns(3)
     pct_changed = float((cur != rgb).any(axis=2).mean() * 100.0)
     c_m1.metric("Tỉ lệ pixel bị thay đổi", f"{pct_changed:.1f}%")
-    c_m2.metric("Độ lệch màu trung bình ΔE76 (CIE Lab)", f"{lab_delta_e(rgb, cur):.2f}")
+    c_m2.metric("Độ lệch không gian Lab trung bình ΔE76", f"{lab_delta_e(rgb, cur):.2f}")
     c_m3.metric("Diện tích vùng nhìn thấy (FOV)", f"{float(mask_info['fov'].mean() * 100.0):.1f}%")
 
 # ============================================================================== TAB 3
 with tab_cam:
     st.subheader("Giải thích vùng chú ý của mô hình bằng Grad-CAM (`layer4`)")
-    default_cls_idx = CLASSES.index(true_dx) if true_dx in CLASSES else int(p0.argmax())
-    target_cls = st.selectbox(
-        "Chọn lớp đích để tính đạo hàm Grad-CAM",
-        CLASSES,
-        index=default_cls_idx,
-        format_func=lambda c: f"{c} – {CLASS_NAMES[c]}",
-    )
-    t_idx = CLASSES.index(target_cls)
-    cam0 = compute_gradcam(rgb, model, dev, t_idx)
-    cam1 = compute_gradcam(cur, model, dev, t_idx)
-
-    les_mask = mask_info["lesion"]
-    hair_dil = cv2.dilate(mask_info["hair"].astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
-    e_les0 = float(cam0[les_mask].sum() / max(float(cam0.sum()), 1e-8) * 100.0)
-    e_les1 = float(cam1[les_mask].sum() / max(float(cam1.sum()), 1e-8) * 100.0)
-    e_hair0 = float(cam0[hair_dil].sum() / max(float(cam0.sum()), 1e-8) * 100.0)
-    e_hair1 = float(cam1[hair_dil].sum() / max(float(cam1.sum()), 1e-8) * 100.0)
-
-    g1, g2 = st.columns(2)
-    with g1:
-        st.image(
-            overlay_cam(rgb, cam0),
-            caption=f"Grad-CAM trên ảnh đầu vào (đích `{target_cls}`) · Năng lượng trong tổn thương: {e_les0:.1f}%, trên lông: {e_hair0:.1f}%",
-            width="stretch",
+    if has_ckpt and p0 is not None:
+        default_cls_idx = CLASSES.index(true_dx) if true_dx in CLASSES else int(p0.argmax())
+        target_cls = st.selectbox(
+            "Chọn lớp đích để tính đạo hàm Grad-CAM",
+            CLASSES,
+            index=default_cls_idx,
+            format_func=lambda c: f"{c} – {CLASS_NAMES[c]}",
         )
-    with g2:
-        st.image(
-            overlay_cam(cur, cam1),
-            caption=f"Grad-CAM trên ảnh sau xử lý (đích `{target_cls}`) · Năng lượng trong tổn thương: {e_les1:.1f}%, trên lông: {e_hair1:.1f}%",
-            width="stretch",
+        t_idx = CLASSES.index(target_cls)
+        cam0 = compute_gradcam(rgb, model, dev, t_idx)
+        cam1 = compute_gradcam(cur, model, dev, t_idx)
+
+        les_mask = mask_info["lesion"]
+        hair_dil = cv2.dilate(mask_info["hair"].astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+        e_les0 = float(cam0[les_mask].sum() / max(float(cam0.sum()), 1e-8) * 100.0)
+        e_les1 = float(cam1[les_mask].sum() / max(float(cam1.sum()), 1e-8) * 100.0)
+        e_hair0 = float(cam0[hair_dil].sum() / max(float(cam0.sum()), 1e-8) * 100.0)
+        e_hair1 = float(cam1[hair_dil].sum() / max(float(cam1.sum()), 1e-8) * 100.0)
+
+        g1, g2 = st.columns(2)
+        with g1:
+            st.image(
+                overlay_cam(rgb, cam0),
+                caption=f"Grad-CAM trên ảnh đầu vào (đích `{target_cls}`) · Năng lượng trong tổn thương: {e_les0:.1f}%, trên lông: {e_hair0:.1f}%",
+                width="stretch",
+            )
+        with g2:
+            st.image(
+                overlay_cam(cur, cam1),
+                caption=f"Grad-CAM trên ảnh sau xử lý (đích `{target_cls}`) · Năng lượng trong tổn thương: {e_les1:.1f}%, trên lông: {e_hair1:.1f}%",
+                width="stretch",
+            )
+        st.caption(
+            "Grad-CAM tính tại `model.layer4` (lưới đặc trưng 7×7 phóng nội suy về 600×450), thể hiện vùng ảnh đóng góp dương "
+            "vào logit của lớp đích đã chọn."
         )
-    st.caption(
-        "Grad-CAM tính tại `model.layer4` (lưới đặc trưng 7×7 phóng nội suy về 600×450), thể hiện vùng ảnh đóng góp dương "
-        "vào logit của lớp đích đã chọn."
-    )
+    else:
+        st.info("Cần tệp `baseline_seed42.pt` để tính trực tiếp bản đồ nhiệt Grad-CAM.")
 
     st.divider()
-    st.subheader("Tra cứu nhanh Kết quả Thực nghiệm 3 Seed của Dự án")
-    bb_csv = ROOT / "outputs/backbones/comparison_test.csv"
-    art_csv = ROOT / "outputs/preprocess_artifacts/comparison_test.csv"
-    if bb_csv.exists():
-        st.markdown("**So sánh các kiến trúc CNN trên tập Test (3 seed: 42, 43, 44):**")
+    st.subheader("Tra cứu nhanh Kết quả Thực nghiệm 3 Seed của Dự án (NVIDIA L40S)")
+    bb_csv = resolve_table("outputs/backbones/comparison_test.csv", "backbones_comparison_test.csv")
+    all16_val_csv = resolve_table("outputs/preprocess/all16_comparison_val.csv", "all16_comparison_val.csv")
+    all16_test_csv = resolve_table("outputs/preprocess/all16_comparison_test.csv", "all16_comparison_test.csv")
+    if bb_csv is not None:
+        st.markdown("**So sánh 3 kiến trúc CNN trên tập Test (3 seed: 42, 43, 44):**")
         st.dataframe(pd.read_csv(bb_csv).round(4), hide_index=True, width="stretch")
-    if art_csv.exists():
-        st.markdown("**Kết quả Ablation các cấu hình tiền xử lý trên tập Test (ResNet-18, 3 seed):**")
+    if all16_val_csv is not None and all16_test_csv is not None:
+        split_pick = st.radio("Chọn tập xem bảng tổng hợp 16 cấu hình tiền xử lý:", ["Validation (chọn mô hình)", "Test (đánh giá cuối)"], horizontal=True)
+        chosen_csv = all16_val_csv if split_pick.startswith("Validation") else all16_test_csv
+        df_16 = pd.read_csv(chosen_csv)
         cols_show = [c for c in ["config", "macro_f1_mean", "macro_f1_std", "macro_f1_delta",
                                  "macro_f1_delta_ci_lo", "macro_f1_delta_ci_hi", "macro_f1_delta_sign", "macro_f1_verdict"]
-                     if c in pd.read_csv(art_csv).columns]
-        st.dataframe(pd.read_csv(art_csv)[cols_show].round(4), hide_index=True, width="stretch")
+                     if c in df_16.columns]
+        st.dataframe(df_16[cols_show].round(4), hide_index=True, width="stretch")

@@ -135,10 +135,9 @@ def masks(gray: np.ndarray) -> dict:
     return dict(fov=fov, inner=inner, hair=hair, lesion=les, otsu_t=t, skin=fov & ~les_big & ~hair)
 
 
-def compute_one(path: str):
-    pil = Image.open(path)
-    W, H, mode = pil.width, pil.height, pil.mode
-    rgb = np.asarray(pil.convert("RGB"))
+def compute_from_rgb(rgb: np.ndarray, mode: str = "RGB") -> tuple[dict, np.ndarray]:
+    """Tính trọn bộ chỉ số chất lượng trực tiếp từ mảng RGB uint8 (H, W, 3) trong RAM (không ghi/đọc đĩa tạm)."""
+    H, W = rgb.shape[:2]
     gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     M = masks(gray)
@@ -148,13 +147,14 @@ def compute_one(path: str):
 
     gf = gray[fov]
     hist = np.bincount(gf, minlength=256).astype(np.float64)
-    p = hist / hist.sum()
+    p = hist / max(hist.sum(), 1.0)
     g_skin = gray[skin].mean() if has_skin else np.nan
     g_les = gray[les & ~hair].mean() if has_les else np.nan
     bright = (hsv[..., 2] >= BRIGHT_V) & (hsv[..., 1] <= BRIGHT_S) & fov
 
     # ảnh 224 (độ phân giải CNN nhìn thấy): nhiễu và lông có còn sau resize không?
-    g224 = cv2.cvtColor(np.asarray(pil.convert("RGB").resize((IMG_SIZE, IMG_SIZE), Image.BILINEAR)), cv2.COLOR_RGB2GRAY)
+    rgb224 = np.asarray(Image.fromarray(rgb).resize((IMG_SIZE, IMG_SIZE), Image.BILINEAR))
+    g224 = cv2.cvtColor(rgb224, cv2.COLOR_RGB2GRAY)
     fov224 = ~vignette_mask(g224, open_k=5)
     in224 = cv2.erode(fov224.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
     hair224 = hair_mask(g224, in224, k=7, min_area=10)
@@ -182,11 +182,24 @@ def compute_one(path: str):
     return rec, p.astype(np.float32)
 
 
-def analyze_image(path: str) -> dict:
-    """Ảnh + các mask trung gian (cùng tham số compute_one) để vẽ hình minh họa cách đo."""
-    rgb = np.asarray(Image.open(path).convert("RGB"))
+def compute_one(path: str):
+    with Image.open(path) as pil:
+        mode = pil.mode
+        rgb = np.asarray(pil.convert("RGB"))
+    return compute_from_rgb(rgb, mode=mode)
+
+
+def analyze_rgb(rgb: np.ndarray) -> dict:
+    """Ảnh RGB + các mask trung gian trực tiếp trên RAM để vẽ hình minh họa cách đo."""
     gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
     return dict(rgb=rgb, gray=gray, blackhat=blackhat(gray), **masks(gray))
+
+
+def analyze_image(path: str) -> dict:
+    """Ảnh + các mask trung gian (cùng tham số compute_one) để vẽ hình minh họa cách đo."""
+    with Image.open(path) as pil:
+        rgb = np.asarray(pil.convert("RGB"))
+    return analyze_rgb(rgb)
 
 
 def _worker(args):

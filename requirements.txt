@@ -1,9 +1,11 @@
-# PyTorch bản CUDA 12.6 (RTX 3050). Máy không có GPU: bỏ dòng extra-index-url.
---extra-index-url https://download.pytorch.org/whl/cu126
-torch==2.8.0
-torchvision==0.23.0
+# Thư viện cho thực nghiệm & ứng dụng Demo (Python >= 3.10).
+# Nếu cần bản PyTorch tăng tốc GPU CUDA 12.6 (như trên NVIDIA L40S):
+#     pip install --index-url https://download.pytorch.org/whl/cu126 "torch>=2.4" "torchvision>=0.19"
+#     pip install -r requirements.txt
+torch>=2.4
+torchvision>=0.19
 
-numpy>=1.26
+numpy>=1.26,<3.0
 pandas>=2.2
 scikit-learn>=1.5
 matplotlib>=3.9
@@ -11,11 +13,13 @@ seaborn>=0.13
 pillow>=10.0
 tqdm>=4.66
 scipy>=1.13
-opencv-python-headless>=4.10   # EDA: đo chỉ số chất lượng ảnh (src/eda)
+opencv-python-headless>=4.10   # EDA & tiền xử lý (src/eda, src/preprocess)
 
-# Jupyter
+# Jupyter (thực thi 8 notebook thực nghiệm)
 ipykernel>=6.28
 notebook>=7.0
+nbclient>=0.10
+nbformat>=5.10
 
 # Demo 2.8
 streamlit>=1.40

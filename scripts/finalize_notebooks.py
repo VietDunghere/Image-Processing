@@ -127,7 +127,8 @@ Mọi con số dưới đây đọc trực tiếp từ lượt chạy thống nh
 |---|---|---|
 {chr(10).join(cp_rows)}
 
-- Liên hệ định lượng giữa dự đoán ngoài mẫu của baseline với 6 cờ chất lượng ảnh đã được đối chiếu đầy đủ ở mục 5 của `2.2_eda_chat_luong_anh.ipynb` và mục `2.8.4` (`outputs/errors/subgroup_error_class_matched.csv`)."""
+- Liên hệ định lượng giữa dự đoán ngoài mẫu của baseline với 6 cờ chất lượng ảnh đã được đối chiếu đầy đủ ở mục 5 của `2.2_eda_chat_luong_anh.ipynb` và mục `2.8.4` (`outputs/errors/subgroup_error_class_matched.csv`).
+- Trong khảo sát bổ sung 3 kiến trúc CNN (`outputs/backbones/comparison_val.csv`), trên tập `val` dùng để chọn mô hình, `ResNet-18` (`0.7254 ± 0.0044`) tương đương thống kê với `EfficientNet-B0` (`0.7333 ± 0.0146`, CI95 hiệu số chứa 0) nhưng có độ lệch chuẩn giữa các seed thấp hơn 3,3 lần và vượt rõ `MobileNetV3-Small` (`0.6591 ± 0.0135`), nên được giữ cố định làm trục chính cho toàn bộ mục 2.5."""
     set_md(ROOT / "2.3_2.4_du_lieu_baseline.ipynb", 47, md)
 
 
@@ -173,7 +174,7 @@ Mọi số liệu lấy từ lượt chạy thống nhất trên NVIDIA L40S (c�
 {row_line('clahe_L_c2_t8')}
 
 **2. Giải thích & Quyết định cho Pipeline (mục 2.6)**
-- Giả thuyết **H-C được ủng hộ rõ:** hai phép biến đổi lược đồ toàn cục (`hist_eq_L`, `stretch_L_1_99`) đẩy chỉ số tương phản lên rất cao nhưng đồng thời khuếch đại nhiễu ở 224 gấp 3,5–5,5 lần và làm lệch màu $\Delta E_{{76}}$ trên 95,7% ảnh bình thường, dẫn tới sụt giảm nghiêm trọng macro-F1.
+- Giả thuyết **H-C được ủng hộ rõ:** hai phép biến đổi lược đồ toàn cục (`hist_eq_L`, `stretch_L_1_99`) đẩy chỉ số tương phản lên rất cao nhưng đồng thời khuếch đại nhiễu ở 224 gấp 3,5–5,5 lần và làm lệch khoảng cách màu $\Delta E_{{76}}$ (14–22 đơn vị, chủ yếu do dịch chuyển mạnh kênh độ sáng $|\Delta L^*|$ kèm lệch sắc độ nhẹ $\Delta ab \approx 1,4\text{{--}}1,6$ khi cắt ngưỡng RGB) trên 95,7% ảnh bình thường, xóa nhòa ranh giới phân bố độ sáng tự nhiên giữa các lớp bệnh và dẫn tới sụt giảm nghiêm trọng macro-F1.
 - `clahe_L_c2_t8` giới hạn hệ số khuếch đại cục bộ (`clip=2,0`, lưới $8\\times 8$) nên tránh được tác hại của cân bằng toàn cục, song không vượt qua ngưỡng cải thiện rõ trên `val`.
 - **Quyết định:** Loại bỏ `hist_eq_L` và `stretch_L_1_99`; không đưa tăng tương phản đại trà vào nhánh phân loại chính ở mục 2.6."""
     set_md(ROOT / "2.5.2_tuong_phan_thap.ipynb", 32, md_252)
@@ -196,16 +197,16 @@ def update_253_to_256():
     specs = [
         ("2.5.3_long.ipynb", ["hair_bh17", "hair_bh17_cond"],
          "Tìm nét tối mảnh bằng **black-hat 17×17** (Ch.7) rồi khôi phục bằng **inpainting Telea** (Ch.3): `hair_bh17` áp cho mọi ảnh, `hair_bh17_cond` chỉ áp khi `hair_frac > 5,82%`.",
-         "Black-hat không phân biệt được sợi lông với mạng sắc tố tối mảnh bên trong tổn thương `mel` (ở tầng A mục 2.5c, `hair_bh17` inpaint trung vị 8,9% diện tích tổn thương `mel` so với 2,5% ở `nv`, và làm thay đổi hơn 92% ảnh đối chứng không có lông). Bản có điều kiện `hair_bh17_cond` bảo toàn 100% ảnh đối chứng."),
+         "Black-hat không phân biệt được sợi lông với mạng sắc tố tối mảnh bên trong tổn thương `mel` (ở tầng A mục 2.5c, `hair_bh17` inpaint trung vị 8,9% diện tích tổn thương `mel` so với 2,5% ở `nv`, và làm thay đổi hơn 92% ảnh đối chứng không có lông). Bản có điều kiện `hair_bh17_cond` bảo toàn 100% ảnh đối chứng và nâng recall của `mel` trên `test` từ `0,518` lên `0,601`, nhưng lại làm một số ca `nv`/`df` có lông sau inpaint bị đoán nhầm sang `mel` (kéo precision `mel` từ `0,588` xuống `0,502`, F1 `mel` `0,539` so với `0,546` ở baseline) nên tổng thể macro-F1 không tăng."),
         ("2.5.4_sang_khong_deu.ipynb", ["flat_L_s60", "flat_L_s60_cond"],
          "Ước lượng trường chiếu sáng nền $B$ trên kênh $L^*$ bằng lọc Gauss lớn $\\sigma = 60$ px trên vùng da ngoài tổn thương (Ch.3 + Ch.4): `flat_L_s60` (mọi ảnh) và `flat_L_s60_cond` (chỉ ảnh cờ `illum_range > 38`, không viền).",
-         "Nhóm sáng không đều có tỉ lệ lỗi baseline cao hơn kỳ vọng theo lớp ở mục 2.8.4, nhưng hiệu chỉnh nền phẳng bằng mask Otsu thô chưa đủ làm tăng macro-F1 toàn tập vượt mức dao động giữa các seed (nhóm chỉ chiếm 2,5% dữ liệu). Bản `_cond` giữ nguyên 100% ảnh bình thường nên an toàn để minh họa ở demo."),
+         "Nhóm sáng không đều có tỉ lệ lỗi baseline cao hơn kỳ vọng theo lớp ở mục 2.8.4, nhưng hiệu chỉnh nền phẳng bằng mask Otsu thô chưa đủ làm tăng macro-F1 toàn tập vượt mức dao động giữa các seed (nhóm chỉ chiếm 2,5% dữ liệu; kiểm chứng ngưỡng Tukey riêng trên `train_fit` cũng cho đúng `illum_range = 38,00`). Bản `_cond` giữ nguyên 100% ảnh bình thường nên an toàn để minh họa ở demo."),
         ("2.5.5_qua_sang.ipynb", ["gamma_L_1.5", "gamma_L_auto"],
          "Biến đổi lũy thừa $s = r^\\gamma$ ($\\gamma > 1$, Ch.3) trên kênh $L^*$ của không gian CIE $L^*a^*b^*$ (Ch.4): `gamma_L_1.5` cố định cho mọi ảnh và `gamma_L_auto` tự động đưa trung vị $L^*$ về `L_TARGET = 66,61` chỉ cho ảnh cờ quá sáng.",
-         "Áp $\\gamma = 1,5$ đại trà làm tối toàn bộ 97% ảnh bình thường ($\\Delta E_{{76}} \\approx 12$). Bản `gamma_L_auto` tránh đụng tới ảnh đối chứng, song đối với các vùng lóa phản xạ đã bão hòa mức sáng (chạm ngưỡng 255), phép nén gamma chỉ hạ độ sáng trung bình chứ không tái tạo được chi tiết vân da đã mất."),
+         "Áp $\\gamma = 1,5$ đại trà làm tối toàn bộ 97% ảnh bình thường ($\\Delta E_{{76}} \\approx 12$). Đáng chú ý, bản `gamma_L_auto` dù bảo toàn 100% ảnh đối chứng nhưng lại làm giảm mạnh độ chính xác ngay trên chính nhóm ảnh cờ quá sáng (`test` Δ acc `-0,222`, `DiD = -0,209 [-0,302; -0,116]`; `val` Δ acc `-0,162`) do hai cơ chế: (i) lệch phân phối có điều kiện (chỉ 3,0% ảnh lúc train được nén gamma tự động nên CNN ít gặp kiểu biến đổi này), và (ii) các vùng lóa phản xạ đèn LED/gel vốn mất sắc độ ($a^*, b^* \\approx 0$), khi ép hạ $L^*$ về `66,61` sẽ biến mảng lóa trắng thành mảng bệt xám phẳng trung tính đè lên tổn thương mà vẫn không khôi phục được vân da đã bão hòa ở 255."),
         ("2.5.6_vien_toi.ipynb", ["vig_fill", "vig_crop"],
          "Phát hiện vùng đen nối mép bằng phân ngưỡng $\\le 20$ + phép mở $15\\times 15$ (Ch.3 + Ch.7), sau đó xử lý bằng hai hướng: `vig_fill` (tô màu trung vị dải da lân cận + làm mềm biên Gauss $21\\times 21$, giữ nguyên tỉ lệ tổn thương) và `vig_crop` (cắt khung đồng tâm 4:3 rồi phóng lại).",
-         "Chỉ 3,5% ảnh có viền tối ống soi. Khi không kết hợp với cân bằng histogram toàn cục, bản thân ResNet-18 có tích chập cục bộ và gộp trung bình toàn cục ở tầng cuối nên ít bị ảnh hưởng bởi góc đen ở rìa. `vig_fill` không làm biến dạng tỉ lệ kích thước tổn thương như `vig_crop`, phù hợp làm bước minh họa có điều kiện trên giao diện demo."),
+         "Chỉ 3,5% ảnh có viền tối ống soi. Trên chính 79 ảnh viền tối tập `test`, `vig_crop` không hề làm giảm độ chính xác (`Δ acc = +0,004`, CI95 phủ 0), còn mức giảm nhẹ toàn tập (`-0,0198`) đến từ phương sai huấn luyện lại AMP trên 96,5% ảnh không bị chạm tới. Bản thân ResNet-18 có tích chập cục bộ và gộp trung bình toàn cục ở tầng cuối nên ít bị ảnh hưởng bởi góc đen ở rìa; `vig_fill` bảo toàn tỉ lệ kích thước tổn thương tốt hơn `vig_crop`, phù hợp làm bước minh họa có điều kiện trên giao diện demo."),
     ]
 
     for nb_file, cfgs, method_desc, explain_desc in specs:
@@ -238,22 +239,23 @@ def update_253_to_256():
 
 
 def main():
-    for nb in [
-        "2.2_eda_chat_luong_anh.ipynb",
-        "2.5.1_nhieu_gauss.ipynb",
-        "2.5.2_tuong_phan_thap.ipynb",
-        "2.5.3_long.ipynb",
-        "2.5.4_sang_khong_deu.ipynb",
-        "2.5.5_qua_sang.ipynb",
-        "2.5.6_vien_toi.ipynb",
-    ]:
-        execute_nb(nb)
+    if "--markdown-only" not in sys.argv:
+        for nb in [
+            "2.2_eda_chat_luong_anh.ipynb",
+            "2.5.1_nhieu_gauss.ipynb",
+            "2.5.2_tuong_phan_thap.ipynb",
+            "2.5.3_long.ipynb",
+            "2.5.4_sang_khong_deu.ipynb",
+            "2.5.5_qua_sang.ipynb",
+            "2.5.6_vien_toi.ipynb",
+        ]:
+            execute_nb(nb)
 
     update_22()
     update_23_24()
     update_251_252()
     update_253_to_256()
-    print("Đã thực thi và đồng bộ toàn bộ 8 notebook thành công!")
+    print("Đã đồng bộ toàn bộ 8 notebook thành công!")
 
 
 if __name__ == "__main__":

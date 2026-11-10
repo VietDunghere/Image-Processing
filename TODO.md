@@ -27,3 +27,9 @@
 ## 3. Thông tin Nhóm Tác giả & Hồ sơ Nộp (Hoàn tất 100%)
 
 - [x] Đã điền đầy đủ họ tên và mã sinh viên của cả 5 thành viên (**Nguyễn Trung Nam – B23DCVT299**, **Phan Nguyễn Việt Dũng – B23DCCN210**, **Lê Duy Anh – B23DCCN026**, **Đinh Khánh Sơn – B23DCDT223**, **Đào Phạm Bích Ngọc – B23DCVT308**) vào `overleaf/main.tex`, `slides/slides.tex`, `reports/3_thao_luan_phan_cong_ai.md`, `app.py` và `README.md`.
+
+## 4. Phản biện học thuật, Chuẩn hóa Diễn giải & Đóng gói Docker (Hoàn tất 100%)
+
+- [x] Chuẩn hóa lập luận chọn kiến trúc `ResNet-18` dựa chặt chẽ trên tập `val` (`0,7254 ± 0,0044` vs `0,7333 ± 0,0146`, độ lệch chuẩn nhỏ hơn 3,3 lần, CI95 hiệu số chứa 0), ghi rõ điều kiện `micro_batch=16` tích lũy gradient ở `run_backbone_comparison.py` (tự động mở batch 32 khi VRAM $\ge 12$ GB và bật lại `cudnn.benchmark`).
+- [x] Bổ sung giải thích định lượng cho các hiện tượng chuyên sâu trong báo cáo Markdown, Notebook, Overleaf PDF và Slide Beamer: cơ chế sụt giảm nhóm quá sáng của `gamma_L_auto` (`DiD = -0,209` do *conditional covariate shift* + bệt xám vùng lóa bão hòa), đánh đổi precision–recall của `hair_bh17_cond` trên lớp `mel` (`P: 0,588 → 0,502`, `R: 0,518 → 0,601`), mức nền đổi nhãn Tầng B (`15,34%` test, `+20,53%` excess trên cờ quá sáng), chênh lệch `test_only` (`+0,1943`) vs `retrain` (`-0,0073`) của `clahe_L_c2_t8` ở Stress Test Tầng C, và kiểm chứng ngưỡng Tukey riêng trên `train_fit`.
+- [x] Nâng cấp `src/eda/quality_metrics.py` (`compute_from_rgb`, `analyze_rgb` thuần trên bộ nhớ RAM, không ghi tệp tạm ra đĩa), bổ sung cắt khung 4:3 tùy chọn cho ảnh tải lên, đóng gói `demo_assets/` cho bản clone sạch và hoàn thiện `Dockerfile` + `docker-compose.yml` + `.streamlit/config.toml` đạt chuẩn bảo mật (`appuser` non-root, `read_only` rootfs, `127.0.0.1:8501`).

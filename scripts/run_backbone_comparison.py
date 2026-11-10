@@ -123,9 +123,12 @@ def train_arch(arch: str, frames: dict, cache: dict, seeds=SEEDS, eval_batch_siz
 
         run_dir.mkdir(parents=True, exist_ok=True)
         seed_everything(seed, deterministic=False)
-        torch.backends.cudnn.benchmark = False
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats()
+            vram_gb = torch.cuda.get_device_properties(device).total_memory / (1024 ** 3)
+            eff_micro_batch = BATCH_SIZE if vram_gb >= 12.0 else 16
+        else:
+            eff_micro_batch = BATCH_SIZE
 
         model, _ = build_backbone(arch, device)
         criterion = nn.CrossEntropyLoss()
@@ -141,7 +144,7 @@ def train_arch(arch: str, frames: dict, cache: dict, seeds=SEEDS, eval_batch_siz
         for epoch in range(1, EPOCHS + 1):
             t0 = time.time()
             tr_loss = train_one_epoch_accum(model, bt["train"], labels_gpu, sampler, flip_gen, criterion, optimizer,
-                                            scaler, batch_size=BATCH_SIZE, micro_batch=16, amp=amp)
+                                            scaler, batch_size=BATCH_SIZE, micro_batch=eff_micro_batch, amp=amp)
             t_train = time.time() - t0
             pv, va_loss = predict(model, bt["val"], y["val"], criterion, eval_batch_size, amp)
             mv = compute_metrics(y["val"], pv.argmax(1))

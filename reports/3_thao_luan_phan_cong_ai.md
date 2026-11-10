@@ -19,8 +19,9 @@ Kết hợp bằng chứng xuyên suốt từ mục 2.2 đến 2.8 cho phép rú
 ## 3.2 Hạn chế của nghiên cứu và Hướng phát triển ngoài phạm vi
 
 **Hạn chế phương pháp luận:**
-- **Một lần chia split và 3 seed huấn luyện:** Độ lệch chuẩn và khoảng tin cậy bootstrap cụm phản ánh dao động khởi tạo/lấy mẫu WRS và phương sai tập ảnh kiểm thử, chưa phản ánh phương sai giữa các lần chia fold khác nhau; các lớp nhỏ (`df` 23 ảnh, `vasc` 29 ảnh test) có khoảng tin cậy rộng.
-- **Ước lượng vùng tổn thương bằng Otsu thô:** Bộ dữ liệu không kèm mặt nạ phân vùng chuẩn trong quy trình chính; kiểm tra trực quan 24 ảnh tương phản thấp cho thấy Otsu bắt sai 11/24 ảnh khi rìa ảnh tối hơn tổn thương nhạt màu ở tâm. Tương tự, black-hat chỉ bắt lông tối, gây lỗi inpainting trên ca lông bạc/trắng dày.
+- **Một lần chia split, bootstrap có điều kiện trên 3 seed và đối chứng chung:** Khoảng tin cậy bootstrap theo cụm `lesion_id` phản ánh phương sai lấy mẫu trên tập kiểm thử có điều kiện trên 3 seed đã huấn luyện (chưa bao gồm phương sai chia lại K-fold hoặc lấy mẫu vô hạn seed huấn luyện); đồng thời cả 16 cấu hình cùng so với một baseline 3 seed chung để giữ mốc chuẩn thống nhất; các lớp nhỏ (`df` 23 ảnh, `vasc` 29 ảnh test) vẫn có khoảng tin cậy rộng.
+- **Ước lượng vùng tổn thương bằng Otsu thô và quy ước vùng biên:** Bộ dữ liệu không kèm mặt nạ phân vùng chuẩn trong quy trình chính; kiểm tra trực quan 24 ảnh tương phản thấp cho thấy Otsu bắt sai 11/24 ảnh khi rìa ảnh tối hơn tổn thương nhạt màu ở tâm (đồng thời phép đo `contrast` ở EDA dùng toàn bộ `fov_mask` còn bộ đo giai đoạn 1 mục 2.5a co biên `inner_mask` nên chênh nhẹ giá trị cơ sở vài đơn vị xám, không ảnh hưởng so sánh tương đối). Tương tự, black-hat chỉ bắt lông tối, gây lỗi inpainting trên ca lông bạc/trắng dày.
+- **So sánh kiến trúc dưới siêu tham số đóng băng của ResNet-18:** Khảo sát 3 backbone ở mục 2.4 giữ cố định `lr = 1e-4` (không tinh chỉnh lịch giảm tốc độ học riêng cho họ MBConv) và dùng `micro_batch=16` tích lũy gradient 2 bước cho `EfficientNet-B0`/`MobileNetV3-Small`.
 - **Giới hạn một miền thiết bị (dermoscopy):** Không đánh giá khả năng tổng quát hóa sang tập dữ liệu bệnh viện khác hoặc ảnh chụp lâm sàng bằng điện thoại.
 
 **Hướng cải thiện tiềm năng (nêu rõ là ngoài phạm vi, nhóm *không thực hiện* để giữ đúng mục tiêu kiểm soát biến của đề tài):**
@@ -32,7 +33,7 @@ Kết hợp bằng chứng xuyên suốt từ mục 2.2 đến 2.8 cho phép rú
 
 | Thành viên | Mã SV | Phần công việc phụ trách chính | Mức độ hoàn thành |
 |---|---|---|---|
-| **Nguyễn Trung Nam** | `B23DCVT299` | Tích hợp & thực thi thống nhất toàn bộ pipeline trên GPU NVIDIA L40S, khảo sát 3 kiến trúc CNN (mục 2.4), hoàn thiện thực nghiệm 4 tầng (mục 2.5c), nâng cấp ứng dụng Streamlit 3 tab (`app.py`) và chế bản báo cáo LaTeX Overleaf / Slide Beamer | 100% |
+| **Nguyễn Trung Nam** | `B23DCVT299` | Tích hợp & thực thi thống nhất toàn bộ pipeline trên GPU NVIDIA L40S, khảo sát 3 kiến trúc CNN (mục 2.4), hoàn thiện thực nghiệm 4 tầng (mục 2.5c), nâng cấp ứng dụng Streamlit 3 tab (`app.py`), đóng gói Docker/Docker Compose và chế bản báo cáo LaTeX Overleaf / Slide Beamer | 100% |
 | **Phan Nguyễn Việt Dũng** | `B23DCCN210` | Kiến trúc mã nguồn dùng chung (`src/training.py`, `compare.py`), chuẩn bị dữ liệu & baseline 2.1, 2.3, 2.4; thực nghiệm khử nhiễu & tương phản 2.5.1–2.5.2; thiết kế khung phân tích 4 tầng 2.5c | 100% |
 | **Lê Duy Anh** | `B23DCCN026` | Cơ sở lý thuyết Chương 3–4, phân tích thống kê & biên soạn báo cáo mục Mở đầu, 2.5.1–2.5.2 (nhiễu Gauss, tương phản thấp), xây dựng kịch bản thuyết trình phần đầu | 100% |
 | **Đinh Khánh Sơn** | `B23DCDT223` | Xây dựng bộ 7 chỉ số & phân tích EDA chất lượng ảnh (mục 2.2), thực nghiệm 4 vấn đề lông/viền tối/quá sáng/sáng lệch (2.5.3–2.5.6), phân tích lỗi 2.8 & khởi tạo demo Streamlit | 100% |

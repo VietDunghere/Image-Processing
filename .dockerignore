@@ -1,0 +1,23 @@
+# Bỏ qua môi trường ảo, lịch sử git, dữ liệu thô HAM10000 (~5 GB) và LaTeX/Notebook nặng khi build Docker Demo
+.git
+.gitignore
+.venv
+venv
+env
+__pycache__
+*.py[cod]
+*.ipynb
+.ipynb_checkpoints
+archive
+data
+tailieu
+overleaf
+slides
+reports
+scripts
+
+# Bỏ qua toàn bộ outputs/ nặng (cache NPY nhiều GB), chỉ cho phép giữ checkpoint mẫu nếu có sẵn trên máy build
+outputs/*
+!outputs/checkpoints
+outputs/checkpoints/*
+!outputs/checkpoints/baseline_seed42.pt

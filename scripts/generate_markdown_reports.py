@@ -250,9 +250,10 @@ def write_24():
 |---|---:|---|---|---|---|
 {chr(10).join(bb_lines)}
 
-**Nhận xét và lý do giữ ResNet-18 làm trục chính cho mục 2.5:**
-- **MobileNetV3-Small** chỉ có 1,53M tham số (nhỏ hơn 7,3 lần so với ResNet-18), tốc độ suy luận rất nhanh nhưng dung lượng biểu diễn hạn chế hơn khi phân biệt các cấu trúc sắc tố tinh vi dưới tốc độ học cố định `1e-4`.
-- **EfficientNet-B0** (4,02M tham số) đạt hiệu năng cạnh tranh trên `val`/`test`, trong khi **ResNet-18** có cấu trúc khối dư $3\\times 3$ tường minh, ổn định qua các seed và đặc biệt thuận lợi để trích xuất bản đồ nhiệt `layer4` ($7\\times 7$) cho phân tích Grad-CAM ở mục 2.5c và demo 2.8. Do đó, ResNet-18 được giữ cố định làm mô hình chuẩn xuyên suốt 16 thí nghiệm tiền xử lý ở mục 2.5 để đảm bảo kiểm soát biến tuyệt đối.
+**Nhận xét và lý do chọn ResNet-18 trên tập Validation cho mục 2.5:**
+- **Trên tập chọn mô hình (`val`):** `EfficientNet-B0` (`{f4(bb_val.loc['efficientnet_b0', 'macro_f1_mean'])} ± {f4(bb_val.loc['efficientnet_b0', 'macro_f1_std'])}`) và `ResNet-18` (`{f4(bb_val.loc['resnet18', 'macro_f1_mean'])} ± {f4(bb_val.loc['resnet18', 'macro_f1_std'])}`) **không khác biệt rõ về mặt thống kê** ($\\Delta_{{\\text{{val}}}} = {sf4(bb_val.loc['efficientnet_b0', 'macro_f1_delta'])}$, CI95 `[{sf4(bb_val.loc['efficientnet_b0', 'macro_f1_ci_lo'])}; {sf4(bb_val.loc['efficientnet_b0', 'macro_f1_ci_hi'])}]`, dấu `2+/1-`), nhưng `ResNet-18` có độ lệch chuẩn giữa các seed thấp hơn **3,3 lần** (`0,0044` so với `0,0146`), giúp đường cơ sở ổn định hơn khi đo biến thiên nhỏ $\\Delta$ ở mục 2.5. `MobileNetV3-Small` (1,53M tham số) nhẹ hơn 7,3 lần nhưng đạt `val` macro-F1 thấp hơn rõ (`{f4(bb_val.loc['mobilenet_v3_small', 'macro_f1_mean'])}`).
+- **Lưu ý kiểm soát biến kiến trúc:** Cả ba mạng được đánh giá dưới cùng tốc độ học đóng băng `lr = 1e-4` (tương thích tự nhiên với họ ResNet hơn các khối tích chập tách chiều sâu MBConv); ngoài ra kịch bản chuẩn dùng `micro_batch=16` kèm tích lũy gradient 2 bước cho `EfficientNet-B0`/`MobileNetV3-Small` để tương thích VRAM phổ thông (tổng batch cập nhật trọng số vẫn là 32, chỉ khác kích thước thống kê `BatchNorm` mỗi bước tiến).
+- Kết hợp ưu thế cấu trúc khối dư $3\\times 3$ tường minh và bản đồ đặc trưng tầng cuối `layer4` ($7\\times 7$) trực quan cho phân tích Grad-CAM (mục 2.5c, 2.8), **ResNet-18** được giữ cố định làm mô hình trục chính xuyên suốt 16 thí nghiệm tiền xử lý.
 """
     (REP / "2.4_baseline.md").write_text(txt, encoding="utf-8")
 
@@ -306,8 +307,8 @@ def write_25a():
 - **Kiểm soát biến:** chỉ thay đổi duy nhất hàm `preprocess_fn` áp dụng trên ảnh RGB gốc $600\\times 450$ **trước** bước `Resize 224×224` và `Normalize ImageNet`, áp dụng đồng nhất cho cả `train_fit`, `val` và `test`. Toàn bộ siêu tham số, split theo `lesion_id`, thứ tự lấy mẫu WRS và phép lật ảnh theo từng seed được giữ cố định tuyệt đối (`FROZEN_CONFIG`).
 - **Quy tắc kết luận đặt trước (`src/preprocess/compare.py`):** một cấu hình chỉ được kết luận là **"tốt hơn rõ"** (hoặc **"tệ hơn rõ"**) so với baseline khi thỏa đồng thời cả 3 điều kiện:
   1. $|\Delta\\text{{ trung bình}}| > \\text{{std}}_{{\\text{{baseline}}}}$ trên cùng tập (`val`: `{f4(tv.loc['baseline', 'macro_f1_std'])}`; `test`: `{f4(tt.loc['baseline', 'macro_f1_std'])}`);
-  2. Khoảng tin cậy 95% bootstrap theo cụm `lesion_id` (1 000 lần) không chứa 0;
-  3. Cả 3 cặp ghép seed (42, 43, 44) cùng dấu (`3+/0-` hoặc `0+/3-`).
+  2. Khoảng tin cậy 95% bootstrap theo cụm `lesion_id` (1 000 lần lấy mẫu lại các cụm tổn thương trên tập đánh giá, có điều kiện trên 3 seed đã huấn luyện) không chứa 0;
+  3. Cả 3 cặp ghép seed (42, 43, 44) cùng dấu (`3+/0-` hoặc `0+/3-`) so với cùng 3 seed của một `baseline` dùng chung duy nhất (nhằm tránh nhiễu dao động giữa các lần chạy lại baseline khác nhau).
 
 ## 2.5.1 Khử nhiễu Gauss (`gauss3`, `median3`, `median5`)
 
@@ -343,7 +344,7 @@ def write_25a():
 
 **Phân tích và giải thích:**
 1. **Không có bộ lọc nhiễu nào vượt baseline:** `median3` giữ macro-F1 gần sát baseline nhất, trong khi `gauss3` và `median5` giảm nhẹ trên `test` do làm mờ biên sắc tố và chi tiết vi cấu trúc.
-2. **Bằng chứng thực nghiệm mạnh về tác hại của biến đổi lược đồ toàn cục:** `hist_eq_L` và `stretch_L_1_99` đều làm giảm rất mạnh macro-F1 trên cả `val` và `test` (cả 3/3 seed cùng âm, khoảng tin cậy tách biệt hoàn toàn khỏi 0). Dù đẩy chỉ số `contrast` lên 68–100 mức xám, chúng khuếch đại nhiễu gấp 3,5–5,5 lần và làm lệch màu $\\Delta E_{{76}}$ từ 14 đến 22 đơn vị trên toàn bộ các ảnh bình thường, xóa nhòa ranh giới phân phối màu tự nhiên giữa các lớp bệnh.
+2. **Bằng chứng thực nghiệm mạnh về tác hại của biến đổi lược đồ toàn cục:** `hist_eq_L` và `stretch_L_1_99` đều làm giảm rất mạnh macro-F1 trên cả `val` và `test` (cả 3/3 seed cùng âm, khoảng tin cậy tách biệt hoàn toàn khỏi 0). Dù đẩy chỉ số `contrast` lên 68–100 mức xám, chúng khuếch đại nhiễu gấp 3,5–5,5 lần và gây lệch khoảng cách màu $\\Delta E_{{76}}$ từ 14 đến 22 đơn vị trên toàn bộ các ảnh bình thường (chủ yếu do dịch chuyển mạnh độ sáng $|\\Delta L^*|$ kèm lệch sắc độ nhẹ $\\Delta ab \\approx 1,4\\text{{--}}1,6$ khi cắt ngưỡng không gian màu RGB $[0; 255]$), xóa nhòa ranh giới phân bố độ sáng tự nhiên giữa các lớp bệnh.
 3. **CLAHE và cấu hình kết hợp `median3+clahe_L_c2_t8`:** việc đặt lọc trung vị đứng trước CLAHE giúp kiềm chế khuếch đại nhiễu theo đúng lý thuyết Chương 3, giữ kết quả gần mức trung tính so với hai phép toàn cục, song vẫn không mang lại cải thiện vượt chuẩn trên `val` hay trên phân tích sai số kép (DiD) của nhóm cờ.
 """
     (REP / "2.5a_nhieu_tuong_phan.md").write_text(txt, encoding="utf-8")
@@ -393,7 +394,7 @@ def write_25b():
 
 Mỗi hiện tượng nhiễu/lỗi chiếu sáng trong nhóm này chỉ xuất hiện ở **2,5% – 10,1%** tổng số ảnh. Bài học từ mục 2.5a cho thấy phép biến đổi áp lên toàn bộ tập ảnh có thể gây hại cho hơn 90% ảnh bình thường. Vì vậy, với mỗi vấn đề nhóm thiết kế cặp đối chứng:
 - **Bản đại trà (`hair_bh17`, `gamma_L_1.5`, `flat_L_s60`):** áp dụng cho 100% ảnh.
-- **Bản có điều kiện (`hair_bh17_cond`, `gamma_L_auto`, `flat_L_s60_cond`, cùng `vig_fill`/`vig_crop` vốn chỉ kích hoạt khi có viền đen $>1\\%$):** dùng chính quy tắc gắn cờ của EDA để chỉ xử lý ảnh gặp vấn đề; ảnh bình thường giữ nguyên 100% từng pixel. Hằng số mục tiêu duy nhất `L_TARGET = 66,61` được ước lượng chỉ trên tập `train_fit` (không rò rỉ `val`/`test`).
+- **Bản có điều kiện (`hair_bh17_cond`, `gamma_L_auto`, `flat_L_s60_cond`, cùng `vig_fill`/`vig_crop` vốn chỉ kích hoạt khi có viền đen $>1\\%$):** dùng chính quy tắc gắn cờ của EDA để chỉ xử lý ảnh gặp vấn đề; ảnh bình thường giữ nguyên 100% từng pixel. Hằng số mục tiêu `L_TARGET = 66,61` được ước lượng chỉ trên tập `train_fit` (không rò rỉ `val`/`test`); kiểm chứng độc lập quy tắc Tukey $Q_3 + 1,5\\cdot\\text{{IQR}}$ riêng trên `train_fit` cũng cho ngưỡng `illum_range = 38,00` (trùng khít tuyệt đối với toàn tập) và `hair_frac = 0,0593` (chỉ lệch $0,0011$, tức $0,11\\%$ diện tích FOV so với ngưỡng EDA `0,0582`).
 
 | Vấn đề | Cấu hình | Kỹ thuật & Tham số (Ch.3, Ch.4, Ch.7) |
 |---|---|---|
@@ -429,7 +430,9 @@ Mỗi hiện tượng nhiễu/lỗi chiếu sáng trong nhóm này chỉ xuất 
 **Nhận xét cốt lõi:**
 1. **Toàn tập:** Trên tập `val` (tập dùng để chọn mô hình), không cấu hình đơn lẻ hay kết hợp (`vig_fill+flat_L_s60_cond`) nào đạt chuẩn "tốt hơn rõ" so với baseline.
 2. **Tác hại xóa nhầm cấu trúc sắc tố của `hair_bh17`:** Áp black-hat + inpainting lên mọi ảnh làm cả 3/3 seed giảm điểm trên cả `val` và `test` (`0+/3-`), do xóa mất mạng lưới sắc tố tối mảnh đặc trưng của `mel` (được chứng minh định lượng ở mục 2.5c và 2.8.5).
-3. **Vai trò "giả dược kiểm soát" của các bản có điều kiện:** Các cấu hình `vig_fill`, `gamma_L_auto`, `flat_L_s60_cond` chỉ chạm vào 2,5%–3,5% ảnh (hơn 96% ảnh giống hệt baseline từng pixel) nhưng vẫn có dao động $\Delta$ cỡ $\\pm 0,01\\text{{--}}0,03$ do tính ngẫu nhiên của quá trình huấn luyện lại với AMP. Điều này khẳng định tính đúng đắn của quy tắc kiểm định 3 seed + bootstrap cụm thay vì kết luận vội vàng từ chênh lệch vài phần nghìn trên 1 seed.
+3. **Vai trò "giả dược kiểm soát" trên phần ảnh không bị cờ và giải mã hiện tượng lệch phân phối cục bộ ở `gamma_L_auto`:**
+   - Với `vig_crop` và `vig_fill+flat_L_s60_cond`, độ chính xác riêng trên nhóm ảnh bị cờ thực tế không giảm (`+0,004` và `+0,036`, `DiD = +0,052`), trong khi $\\Delta$ toàn tập hơi âm (`-0,0198` và `-0,0174`) là do nhiễu ngẫu nhiên của quá trình huấn luyện lại `AMP` trên 94%–96,5% ảnh không bị chạm tới. Điều này khẳng định tính cần thiết của quy tắc 3 seed + bootstrap cụm.
+   - Đáng chú ý nhất ở Bảng 2.5-6 là **`gamma_L_auto` làm sụt giảm mạnh độ chính xác ngay trên chính 69 ảnh quá sáng tập `test`** (từ `0,729` xuống `0,507`, $\\Delta = -0,222$, `DiD = -0,209 [-0,302; -0,116]`, cả 3 seed `0+/3-`; tập `val` cũng giảm `-0,162`), tệ hơn nhiều so với `gamma_L_1.5` đại trà (`-0,043`). Nguyên nhân đến từ hai cơ chế: (i) **lệch phân phối có điều kiện (*conditional covariate shift*)** – chỉ 3,0% ảnh lúc train được nén gamma mạnh ($\\gamma$ tự động lên tới $2,0\\text{{--}}3,0$) nên mạng hầu như không học được biểu diễn cho kiểu biến đổi này, và (ii) **hiện tượng bệt xám vùng lóa (*desaturated gray crush*)** – vùng phản xạ đèn LED/gel có sắc độ $a^*, b^* \\approx 0$, khi ép hạ kênh $L^*$ về `66,61` sẽ biến mảng lóa trắng thành mảng xám phẳng trung tính nằm đè lên tổn thương (dễ bị nhầm với cấu trúc màn xám–trắng hoặc thoái triển sắc tố) mà vẫn không khôi phục được vân da đã bão hòa ở mức 255.
 """
     (REP / "2.5b_long_vien_sang.md").write_text(txt, encoding="utf-8")
 
@@ -518,7 +521,7 @@ Hai mô hình `baseline` huấn luyện cùng cấu hình nhưng khác seed vố
 |---|---|---|---|---|---|
 {chr(10).join(rows_b)}
 
-- **Đối chiếu H-B1 & H-B2:** Hầu hết các cấu hình có điều kiện (`vig_fill`, `gamma_L_auto`, `flat_L_s60_cond`, `hair_bh17_cond`) có tỉ lệ đổi nhãn sát mức nền tự nhiên giữa các seed baseline (cả trên ảnh không bị cờ, xác nhận **H-B2**); chỉ các phép can thiệp đại trà mạnh như `hair_bh17` mới đẩy tỉ lệ bất đồng vượt lên trên mức nền.
+- **Đối chiếu H-B1 & H-B2:** Mức nền bất đồng tự nhiên giữa hai seed của chính `baseline` là **15,3%** trên `test` (`16,0%` trên `val`). Hai cấu hình có điều kiện `vig_fill` (`-0,67%`, $p_{{\\text{{Holm}}}}=0,417$) và `flat_L_s60_cond` (`-0,12%`, $p_{{\\text{{Holm}}}}=1,000$) nằm sát mức nền cả toàn tập lẫn trên nhóm cờ. Trên phần ảnh **không bị cờ**, mọi bản có điều kiện đều giữ tỉ lệ đổi nhãn sát mức nền (xác nhận **H-B2**, ví dụ `gamma_L_auto` trên ảnh không cờ chỉ lệch `+0,71%`, $p_{{\\text{{Holm}}}}=0,48$). Tuy nhiên, trên chính **nhóm ảnh bị cờ**, `gamma_L_auto` đẩy tỉ lệ đổi nhãn vọt thêm **`+20,53%`** ($p_{{\\text{{Holm}}}}=0,005$, khớp hoàn toàn với mức sụt giảm `-22,2%` accuracy nhóm quá sáng ở mục 2.5b), còn cả `hair_bh17` (`+2,35%` toàn tập) lẫn `hair_bh17_cond` (`+2,45%` toàn tập, `+11,64%` trên nhóm cờ lông, $p_{{\\text{{Holm}}}}=0,005$) đều vượt mức nền do can thiệp inpainting trực tiếp lên vùng tổn thương/sợi lông.
 
 ## 4. Tầng C – Stress Test với suy giảm tổng hợp có kiểm soát
 
@@ -530,7 +533,7 @@ Hai mô hình `baseline` huấn luyện cùng cấu hình nhưng khác seed vố
 |---|---|---:|---|---|
 {chr(10).join(rows_c)}
 
-- **Đối chiếu H-C1…H-C4:** Khi ảnh kiểm thử bị suy giảm ngoại lai nặng vượt xa phân phối tự nhiên của HAM10000, tiền xử lý phát huy tác dụng khôi phục rất lớn ngay ở nhánh `test_only` (không cần train lại): `hair_bh17_cond` tăng **+0,4623** macro-F1 khi lông che dày, `clahe_L_c2_t8` tăng **+0,1943** khi nén tương phản nặng, và `vig_fill` tăng **+0,1020** khi viền đen lớn (cả ba đều `3+/0-`, *tốt hơn rõ*). Ngược lại, với phơi sáng cháy trắng mức 3 (`overexpose`), `gamma_L_auto` không khôi phục được thông tin đã bão hòa ở 255 (`-0,0005`, ủng hộ **H-C4**). *Lưu ý:* với viền và lông giả lập, phép xử lý gần với phép nghịch đảo của quá trình gây nhiễu nên đây là kịch bản thuận lợi lý tưởng, không dùng để thay đổi quyết định pipeline trên dữ liệu thật ở mục 2.6.
+- **Đối chiếu H-C1…H-C4:** Khi ảnh kiểm thử bị suy giảm ngoại lai nặng vượt xa phân phối tự nhiên của HAM10000, tiền xử lý phát huy tác dụng khôi phục rất lớn ngay ở nhánh `test_only` (không cần train lại): `hair_bh17_cond` tăng **+0,4623** macro-F1 khi lông che dày, `clahe_L_c2_t8` tăng **+0,1943** khi nén tương phản nặng, và `vig_fill` tăng **+0,1020** khi viền đen lớn (cả ba đều `3+/0-`, *tốt hơn rõ*). Đáng chú ý ở dòng `low_contrast` ($0,3\\times$), `clahe_L_c2_t8` giúp nhánh `test_only` tăng mạnh (`+0,1943`) nhưng nhánh `retrain` lại không tăng (`-0,0073`): nguyên nhân là CLAHE kéo biên độ ảnh bị nén $0,3\\times$ quay về đúng dải tương phản tự nhiên mà mô hình `baseline` đã học, trong khi mô hình `retrain` vốn được huấn luyện trên ảnh đã tăng tương phản CLAHE (biên độ cao hơn hẳn bình thường) nên ảnh nén $0,3\\times$ sau một lần CLAHE vẫn có tương phản thấp hơn kỳ vọng của nó. Ngược lại, với phơi sáng cháy trắng mức 3 (`overexpose`), `gamma_L_auto` không khôi phục được thông tin đã bão hòa ở 255 (`-0,0005`, ủng hộ **H-C4**). *Lưu ý:* với viền và lông giả lập, phép xử lý gần với phép nghịch đảo của quá trình gây nhiễu nên đây là kịch bản thuận lợi lý tưởng, không dùng để thay đổi quyết định pipeline trên dữ liệu thật ở mục 2.6.
 
 ## 5. Tầng D – Giải thích vùng chú ý bằng Grad-CAM (`layer4`)
 
@@ -549,6 +552,7 @@ def write_26_27():
     tv = pd.read_csv(OUT / "preprocess/all16_comparison_val.csv").set_index("config")
     tt = pd.read_csv(OUT / "preprocess/all16_comparison_test.csv").set_index("config")
     S_base = pd.read_csv(OUT / "baseline/summary.csv").set_index("seed")
+    bb_va = pd.read_csv(OUT / "backbones/comparison_val.csv").set_index("arch")
     bb_te = pd.read_csv(OUT / "backbones/comparison_test.csv").set_index("arch")
     app_chk = json.loads((OUT / "errors/app_consistency_check.json").read_text(encoding="utf-8"))
 
@@ -618,7 +622,7 @@ Từ bằng chứng thực nghiệm trên, nhóm đề xuất kiến trúc **hai
 
 ### 2.7.1 Lựa chọn kiến trúc và siêu tham số cuối
 
-- **Kiến trúc mô hình cuối:** So sánh trên cùng cấu hình đóng băng ở mục 2.4 (`outputs/backbones/comparison_test.csv`) cho thấy **ResNet-18** đạt `test` macro-F1 `{f4(bb_te.loc['resnet18', 'macro_f1_mean'])} ± {f4(bb_te.loc['resnet18', 'macro_f1_std'])}`, so với `{f4(bb_te.loc['efficientnet_b0', 'macro_f1_mean'])} ± {f4(bb_te.loc['efficientnet_b0', 'macro_f1_std'])}` của `EfficientNet-B0` và `{f4(bb_te.loc['mobilenet_v3_small', 'macro_f1_mean'])} ± {f4(bb_te.loc['mobilenet_v3_small', 'macro_f1_std'])}` của `MobileNetV3-Small`. ResNet-18 được chọn làm mô hình cuối nhờ độ ổn định cao giữa các seed, cấu trúc khối dư tường minh và độ phân giải không gian tầng cuối `layer4` ($7\\times 7$) phù hợp cho giải thích Grad-CAM.
+- **Kiến trúc mô hình cuối (chọn trên tập `val`, đánh giá trên `test`):** Tuân thủ nguyên tắc không dùng tập `test` để chọn mô hình, quyết định giữ **ResNet-18** được xác lập từ kết quả trên tập `val` ở mục 2.4 (`outputs/backbones/comparison_val.csv`): `ResNet-18` đạt `val` macro-F1 `{f4(bb_va.loc['resnet18', 'macro_f1_mean'])} ± {f4(bb_va.loc['resnet18', 'macro_f1_std'])}`, tương đương thống kê với `EfficientNet-B0` (`{f4(bb_va.loc['efficientnet_b0', 'macro_f1_mean'])} ± {f4(bb_va.loc['efficientnet_b0', 'macro_f1_std'])}`, CI95 của hiệu chứa 0) nhưng có độ lệch chuẩn giữa các seed thấp hơn **3,3 lần**, vượt rõ `MobileNetV3-Small` (`{f4(bb_va.loc['mobilenet_v3_small', 'macro_f1_mean'])} ± {f4(bb_va.loc['mobilenet_v3_small', 'macro_f1_std'])}`), đồng thời cung cấp tầng đặc trưng `layer4` ($7\\times 7$) tường minh cho Grad-CAM. Khi kiểm định độc lập một lần trên tập `test` (`comparison_test.csv`), ResNet-18 đạt `{f4(bb_te.loc['resnet18', 'macro_f1_mean'])} ± {f4(bb_te.loc['resnet18', 'macro_f1_std'])}` (so với `{f4(bb_te.loc['efficientnet_b0', 'macro_f1_mean'])}` của `EfficientNet-B0` và `{f4(bb_te.loc['mobilenet_v3_small', 'macro_f1_mean'])}` của `MobileNetV3-Small`).
 - **Giữ nguyên cấu hình đóng băng (`FROZEN_CONFIG`):** Không thực hiện tinh chỉnh siêu tham số hậu nghiệm sau khi đã xem tập `test`, nhằm bảo toàn tính trung thực phương pháp luận của toàn bộ chuỗi thực nghiệm 2.4–2.6.
 
 ### 2.7.2 Quy trình lưu trữ, chọn checkpoint cho Demo và Báo cáo kết quả
@@ -738,15 +742,16 @@ def write_28():
 |---|---|---|---|---|
 {chr(10).join(mel_lines)}
 
-- Trên tập `test`, có `{n_broken_te}` ảnh `mel` bị chuyển từ đúng ($\\ge 2/3$ seed ở baseline) sang sai ($\\ge 2/3$ seed ở `hair_bh17`), so với `{n_stable_te}` ảnh `mel` ổn định; mức tham chiếu bất đồng tự nhiên giữa hai seed khác nhau của chính baseline trên 222 ảnh `mel` là trung bình `{f1(mel_floor['test']['pairwise_disagree_mean'])}` ảnh (`mel_baseline_floor.json`). Trung vị **{f1(med_in_les)}%** số pixel của mask "lông" trên ảnh `mel` thực chất nằm *bên trong* vùng tổn thương (`mel_hair_flips.csv`, Hình `grid_mel_hair_flips_test.pdf`), xác nhận black-hat đại trà đã inpaint trực tiếp lên cấu trúc sắc tố trong tổn thương, làm mô hình huấn luyện lại dịch chuyển ranh giới phân lớp về phía `nv`. Bản có điều kiện `hair_bh17_cond` khắc phục được hiện tượng này trên 90% ảnh không có cờ lông.
+- Trên tập `test`, có `{n_broken_te}` ảnh `mel` bị chuyển từ đúng ($\\ge 2/3$ seed ở baseline) sang sai ($\\ge 2/3$ seed ở `hair_bh17`), so với `{n_stable_te}` ảnh `mel` ổn định; mức tham chiếu bất đồng tự nhiên giữa hai seed khác nhau của chính baseline trên 222 ảnh `mel` là trung bình `{f1(mel_floor['test']['pairwise_disagree_mean'])}` ảnh (`mel_baseline_floor.json`). Trung vị **{f1(med_in_les)}%** số pixel của mask "lông" trên ảnh `mel` thực chất nằm *bên trong* vùng tổn thương (`mel_hair_flips.csv`, Hình `grid_mel_hair_flips_test.pdf`), xác nhận black-hat đại trà đã inpaint trực tiếp lên cấu trúc sắc tố trong tổn thương, làm mô hình huấn luyện lại dịch chuyển ranh giới phân lớp về phía `nv`.
+- **Giải thích đánh đổi Precision – Recall ở `hair_bh17_cond`:** Bảng 2.8-4 cho thấy `hair_bh17_cond` nâng recall của `mel` trên `test` từ `0,518` lên `0,601`, song macro-F1 toàn tập vẫn không tăng (`-0,0178`). Kiểm tra chi tiết theo lớp (`outputs/runs_cl/hair_bh17_cond/summary.csv`) chỉ rõ sự đánh đổi: khi xóa lông có điều kiện, một số ảnh `nv` và `df` có lông sau khi inpaint bị đẩy nhầm sang dự đoán `mel` (recall `nv` giảm `0,924 → 0,872`, recall `df` giảm `0,522 → 0,333`), kéo **precision của `mel` giảm từ `0,588 ± 0,031` xuống `0,502 ± 0,019`**, khiến F1 của chính lớp `mel` gần như giữ nguyên (`0,539 ± 0,019` so với `0,546 ± 0,007` ở baseline).
 
-## 2.8.6 Hệ thống Demo tương tác trên Streamlit (`app.py`)
+## 2.8.6 Hệ thống Demo tương tác trên Streamlit (`app.py`) và Đóng gói Docker
 
 Ứng dụng `app.py` được thiết kế thành **3 tab chức năng** bám sát pipeline hai nhánh của mục 2.6.3:
-1. **Tab 1 – Pipeline QC & Dự đoán:** chạy trực tiếp bộ đo `compute_one` trên ảnh chuẩn hóa $600\\times 450$, hiển thị bảng 6 cờ cảnh báo QC kèm chỉ số trước/sau, xác suất dự đoán 7 lớp của `baseline_seed42.pt` trên ảnh gốc đối chiếu với ảnh sau xử lý, và nhãn thật nếu chọn từ tập mẫu `samples/`.
+1. **Tab 1 – Pipeline QC & Dự đoán:** chạy bộ đo `compute_from_rgb` thuần trên bộ nhớ RAM (không ghi tệp tạm ra đĩa) trên ảnh chuẩn hóa $600\\times 450$ (hỗ trợ tùy chọn cắt tâm khung 4:3 cho ảnh chụp điện thoại để tránh méo tỉ lệ), hiển thị bảng 6 cờ cảnh báo QC kèm chỉ số trước/sau, xác suất dự đoán 7 lớp của `baseline_seed42.pt` trên ảnh gốc đối chiếu với ảnh sau xử lý, và nhãn thật nếu chọn từ tập mẫu `samples/`.
 2. **Tab 2 – Chẩn đoán thị giác từng giai đoạn xử lý (Ch.3, 4, 7):** hỗ trợ chọn nhanh các preset tiền xử lý hoặc tùy chỉnh chuỗi bước, tích hợp **bộ mô phỏng suy giảm tổng hợp 2.5c** (6 loại $\\times$ 3 mức), vẽ mask hình thái học (viền, lông black-hat, biên Otsu thô), bản đồ biên độ thay đổi pixel $|\\text{{sau}} - \\text{{trước}}|$ (`magma`), độ lệch màu $\\Delta E_{{76}}$ và biểu đồ histogram mức xám trong FOV.
-3. **Tab 3 – Giải thích Grad-CAM (`layer4`) & Tra cứu số liệu:** tính trực tiếp bản đồ nhiệt Grad-CAM theo lớp đích tùy chọn trên cả ảnh đầu vào và ảnh sau xử lý, định lượng % năng lượng chú ý trong tổn thương so với vùng lông, và hiển thị bảng tổng hợp thực nghiệm 3 seed từ `outputs/`.
-- **Kiểm chứng độ chính xác và bảo mật:** khớp tuyệt đối **{app_chk['label_matches']}/{app_chk['n_checked']} nhãn** với tập dự đoán kiểm thử đã lưu (`app_consistency_check.json`); nạp trọng số an toàn với `weights_only=True`, giới hạn tệp tải lên $\\le 10$ MB và xác thực cấu trúc magic-bytes JPEG/PNG trước khi giải mã.
+3. **Tab 3 – Giải thích Grad-CAM (`layer4`) & Tra cứu số liệu:** tính trực tiếp bản đồ nhiệt Grad-CAM theo lớp đích tùy chọn trên cả ảnh đầu vào và ảnh sau xử lý, định lượng % năng lượng chú ý trong tổn thương so với vùng lông, và hiển thị bảng tổng hợp thực nghiệm 3 seed Validation & Test (16 cấu hình + 3 kiến trúc CNN) từ `outputs/` hoặc gói gọn sẵn trong `demo_assets/`.
+- **Kiểm chứng độ chính xác, bảo mật và đóng gói Docker:** khớp tuyệt đối **{app_chk['label_matches']}/{app_chk['n_checked']} nhãn** với tập dự đoán kiểm thử đã lưu (`app_consistency_check.json`); nạp trọng số an toàn với `weights_only=True`, giới hạn tệp tải lên $\\le 10$ MB, bật bảo vệ XSRF và xác thực magic-bytes JPEG/PNG trước khi giải mã; đóng gói sẵn container qua `Dockerfile` và `docker-compose.yml` (user phi đặc quyền `appuser`, hệ thống tệp gốc `read_only`, gắn cổng cục bộ `127.0.0.1:8501`).
 """
     (REP / "2.8_danh_gia.md").write_text(txt, encoding="utf-8")
 
@@ -773,8 +778,9 @@ Kết hợp bằng chứng xuyên suốt từ mục 2.2 đến 2.8 cho phép rú
 ## 3.2 Hạn chế của nghiên cứu và Hướng phát triển ngoài phạm vi
 
 **Hạn chế phương pháp luận:**
-- **Một lần chia split và 3 seed huấn luyện:** Độ lệch chuẩn và khoảng tin cậy bootstrap cụm phản ánh dao động khởi tạo/lấy mẫu WRS và phương sai tập ảnh kiểm thử, chưa phản ánh phương sai giữa các lần chia fold khác nhau; các lớp nhỏ (`df` 23 ảnh, `vasc` 29 ảnh test) có khoảng tin cậy rộng.
-- **Ước lượng vùng tổn thương bằng Otsu thô:** Bộ dữ liệu không kèm mặt nạ phân vùng chuẩn trong quy trình chính; kiểm tra trực quan 24 ảnh tương phản thấp cho thấy Otsu bắt sai 11/24 ảnh khi rìa ảnh tối hơn tổn thương nhạt màu ở tâm. Tương tự, black-hat chỉ bắt lông tối, gây lỗi inpainting trên ca lông bạc/trắng dày.
+- **Một lần chia split, bootstrap có điều kiện trên 3 seed và đối chứng chung:** Khoảng tin cậy bootstrap theo cụm `lesion_id` phản ánh phương sai lấy mẫu trên tập kiểm thử có điều kiện trên 3 seed đã huấn luyện (chưa bao gồm phương sai chia lại K-fold hoặc lấy mẫu vô hạn seed huấn luyện); đồng thời cả 16 cấu hình cùng so với một baseline 3 seed chung để giữ mốc chuẩn thống nhất; các lớp nhỏ (`df` 23 ảnh, `vasc` 29 ảnh test) vẫn có khoảng tin cậy rộng.
+- **Ước lượng vùng tổn thương bằng Otsu thô và quy ước vùng biên:** Bộ dữ liệu không kèm mặt nạ phân vùng chuẩn trong quy trình chính; kiểm tra trực quan 24 ảnh tương phản thấp cho thấy Otsu bắt sai 11/24 ảnh khi rìa ảnh tối hơn tổn thương nhạt màu ở tâm (đồng thời phép đo `contrast` ở EDA dùng toàn bộ `fov_mask` còn bộ đo giai đoạn 1 mục 2.5a co biên `inner_mask` nên chênh nhẹ giá trị cơ sở vài đơn vị xám, không ảnh hưởng so sánh tương đối). Tương tự, black-hat chỉ bắt lông tối, gây lỗi inpainting trên ca lông bạc/trắng dày.
+- **So sánh kiến trúc dưới siêu tham số đóng băng của ResNet-18:** Khảo sát 3 backbone ở mục 2.4 giữ cố định `lr = 1e-4` (không tinh chỉnh lịch giảm tốc độ học riêng cho họ MBConv) và dùng `micro_batch=16` tích lũy gradient 2 bước cho `EfficientNet-B0`/`MobileNetV3-Small`.
 - **Giới hạn một miền thiết bị (dermoscopy):** Không đánh giá khả năng tổng quát hóa sang tập dữ liệu bệnh viện khác hoặc ảnh chụp lâm sàng bằng điện thoại.
 
 **Hướng cải thiện tiềm năng (nêu rõ là ngoài phạm vi, nhóm *không thực hiện* để giữ đúng mục tiêu kiểm soát biến của đề tài):**
@@ -786,7 +792,7 @@ Kết hợp bằng chứng xuyên suốt từ mục 2.2 đến 2.8 cho phép rú
 
 | Thành viên | Mã SV | Phần công việc phụ trách chính | Mức độ hoàn thành |
 |---|---|---|---|
-| **Nguyễn Trung Nam** | `B23DCVT299` | Tích hợp & thực thi thống nhất toàn bộ pipeline trên GPU NVIDIA L40S, khảo sát 3 kiến trúc CNN (mục 2.4), hoàn thiện thực nghiệm 4 tầng (mục 2.5c), nâng cấp ứng dụng Streamlit 3 tab (`app.py`) và chế bản báo cáo LaTeX Overleaf / Slide Beamer | 100% |
+| **Nguyễn Trung Nam** | `B23DCVT299` | Tích hợp & thực thi thống nhất toàn bộ pipeline trên GPU NVIDIA L40S, khảo sát 3 kiến trúc CNN (mục 2.4), hoàn thiện thực nghiệm 4 tầng (mục 2.5c), nâng cấp ứng dụng Streamlit 3 tab (`app.py`), đóng gói Docker/Docker Compose và chế bản báo cáo LaTeX Overleaf / Slide Beamer | 100% |
 | **Phan Nguyễn Việt Dũng** | `B23DCCN210` | Kiến trúc mã nguồn dùng chung (`src/training.py`, `compare.py`), chuẩn bị dữ liệu & baseline 2.1, 2.3, 2.4; thực nghiệm khử nhiễu & tương phản 2.5.1–2.5.2; thiết kế khung phân tích 4 tầng 2.5c | 100% |
 | **Lê Duy Anh** | `B23DCCN026` | Cơ sở lý thuyết Chương 3–4, phân tích thống kê & biên soạn báo cáo mục Mở đầu, 2.5.1–2.5.2 (nhiễu Gauss, tương phản thấp), xây dựng kịch bản thuyết trình phần đầu | 100% |
 | **Đinh Khánh Sơn** | `B23DCDT223` | Xây dựng bộ 7 chỉ số & phân tích EDA chất lượng ảnh (mục 2.2), thực nghiệm 4 vấn đề lông/viền tối/quá sáng/sáng lệch (2.5.3–2.5.6), phân tích lỗi 2.8 & khởi tạo demo Streamlit | 100% |
