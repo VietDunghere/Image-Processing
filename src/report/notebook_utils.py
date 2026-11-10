@@ -26,7 +26,7 @@ from src.training import CLASSES, read_rgb, run_experiment
 RUN_ROOT = Path("outputs/runs_cl")
 FIG_DIR = RUN_ROOT / "figures"
 SEEDS = (42, 43, 44)
-SPEED = dict(channels_last=True, eval_batch_size=512, n_jobs=32)
+SPEED = dict(channels_last=False, eval_batch_size=64, n_jobs=16)
 COLORS = {"baseline": "#7A7A7A"}
 PALETTE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 

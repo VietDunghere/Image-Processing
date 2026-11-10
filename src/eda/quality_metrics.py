@@ -23,7 +23,7 @@ Chạy (từ thư mục gốc repo):
 from __future__ import annotations
 
 import argparse
-from multiprocessing import Pool
+from multiprocessing import get_context
 from pathlib import Path
 
 import cv2
@@ -216,7 +216,7 @@ def compute_all(n_jobs: int = 8, limit: int | None = None, out_dir: Path = OUT_D
         from tqdm import tqdm
     except ImportError:  # pragma: no cover
         tqdm = lambda x, **k: x
-    with Pool(n_jobs) as pool:
+    with get_context("spawn").Pool(n_jobs) as pool:
         res = list(tqdm(pool.imap(_worker, jobs, chunksize=16), total=len(jobs)))
     df = idx.merge(pd.DataFrame([r for r, _ in res]), on="image_id", how="left")
     hist = np.stack([h if h is not None else np.full(256, np.nan, np.float32) for _, h in res])

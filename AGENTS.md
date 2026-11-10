@@ -21,20 +21,19 @@
 
 | Mục | Nội dung | Notebook | Báo cáo | Code chính | Đầu ra | Trạng thái |
 |---|---|---|---|---|---|---|
-| 1 | Giới thiệu, RQ1–RQ4 | – | `1_gioi_thieu.md` | – | – | Có; còn nhãn "[dự kiến]" ở pipeline/demo |
+| 1 | Giới thiệu, RQ1–RQ4 | – | `1_gioi_thieu.md` | – | – | Xong |
 | 2.1 | Mô tả dữ liệu | – | `2.1_du_lieu.md` | `src/report/data_tables.py` | `outputs/report_tables/t21_*` | Xong |
-| 2.2 | EDA chất lượng ảnh | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/*` | `outputs/eda/`, `outputs/figures/eda/` | Xong, trừ cột "Liên quan lỗi CNN?" còn `TODO` |
+| 2.2 | EDA chất lượng ảnh | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/*` | `outputs/eda/`, `outputs/figures/eda/` | Xong (đã điền liên hệ lỗi CNN) |
 | 2.3 | Làm sạch, chia tập, WRS | `2.3_2.4_du_lieu_baseline.ipynb` (mục 3–6) | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | `outputs/splits/`, `outputs/data_prep/` | Xong |
-| 2.4 | Baseline ResNet-18, 3 seed | `2.3_2.4_du_lieu_baseline.ipynb` (mục 7–11) | `2.4_baseline.md` | `src/training.py` | `outputs/baseline/`, `outputs/figures/baseline/` | Xong |
-| 2.5.1, 2.5.2 | Nhiễu Gauss; tương phản thấp (chạy lại) | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`); bản giải thích để trình bày: `2.5.1_2.5.2_nhieu_tuong_phan.md`; script nói: `_script_thuyet_trinh_DuyAnh.md` | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `scripts/report_noise_contrast.py`, `src/preprocess/{noise,contrast,compare,subgroup}.py` | `outputs/rerun_2.5/`, `outputs/figures/rerun_2.5/`, `reports/figures/2.5.1_2.5.2/` | Xong (3 seed), báo cáo đã cập nhật |
-| 2.5b | Lông, viền tối, quá sáng, sáng không đều | – (script) | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/{run_artifact_experiments,analyze_artifacts,artifact_constants}.py` | `outputs/preprocess_artifacts/` (máy khác) | Bản nháp, số từ máy RTX 5060 Ti |
-| 2.5.3–2.5.6 | Lông, sáng không đều, quá sáng, viền tối (mỗi vấn đề một notebook) | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | `src/report/notebook_utils.py`, `scripts/make_problem_notebooks.py`, `src/preprocess/artifacts.py` | `outputs/runs_cl/` (máy khác) | Có output 3 seed từ máy RTX 5060 Ti |
-| 2.5c | Tác động theo 4 tầng: ảnh, dự đoán, stress test, Grad-CAM | – (script) | – | `src/preprocess/degrade.py`, `scripts/impact_*.py` | `outputs/impact/`, `outputs/figures/impact/` | **Dở**: tầng A xong |
-| 2.6, 2.7 | Pipeline đề xuất, huấn luyện cuối | – | `2.6_2.7_pipeline.md` | – | – | Bản nháp; 2.7 chỉ vài dòng |
-| 2.8 | Phân tích lỗi, demo | – | `2.8_danh_gia.md` | `scripts/analyze_errors.py`, `app.py` | `outputs/errors/` (chưa có ở máy này) | Code xong, báo cáo bản nháp |
-| 3 | Thảo luận, phân công, khai báo AI, Overleaf, slide | – | **chưa có** | – | – | Chưa làm |
+| 2.4 | Baseline + 3 kiến trúc CNN | `2.3_2.4_du_lieu_baseline.ipynb` (mục 7–11) | `2.4_baseline.md` | `src/training.py`, `scripts/run_backbone_comparison.py` | `outputs/baseline/`, `outputs/backbones/` | Xong (ResNet-18, EfficientNet-B0, MobileNetV3-S) |
+| 2.5.1, 2.5.2 | Nhiễu Gauss; tương phản thấp | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md`; bản trình bày: `2.5.1_2.5.2_nhieu_tuong_phan.md`; script nói: `_script_thuyet_trinh_DuyAnh.md` | `src/preprocess/problem_report.py`, `src/preprocess/{noise,contrast,compare,subgroup}.py` | `outputs/rerun_2.5/`, `outputs/figures/rerun_2.5/` | Xong (3 seed đồng bộ L40S) |
+| 2.5.3–2.5.6 | Lông, sáng không đều, quá sáng, viền tối | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | `2.5b_long_vien_sang.md` | `src/report/notebook_utils.py`, `scripts/analyze_artifacts.py`, `src/preprocess/artifacts.py` | `outputs/preprocess_artifacts/`, `outputs/runs_cl/` | Xong (3 seed đồng bộ L40S) |
+| 2.5c | Tác động theo 4 tầng: ảnh, dự đoán, stress test, Grad-CAM | – | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | `outputs/impact/`, `outputs/figures/impact/` | Xong trọn vẹn 4 tầng A–D |
+| 2.6, 2.7 | Pipeline đề xuất 2 nhánh, mô hình cuối | – | `2.6_2.7_pipeline.md` | `scripts/collect_all_metrics.py` | `outputs/preprocess/all16_comparison_*.csv` | Xong |
+| 2.8 | Phân tích lỗi chuyên sâu, demo 3 tab | – | `2.8_danh_gia.md` | `scripts/analyze_errors.py`, `app.py` | `outputs/errors/`, `outputs/figures/errors/` | Xong (khớp 20/20 nhãn) |
+| 3 | Thảo luận, phân công, khai báo AI, Overleaf, slide | – | `3_thao_luan_phan_cong_ai.md` | `scripts/build_overleaf_and_slides.py` | `overleaf/BaoCao_XuLyAnh_HAM10000.pdf`, `slides/Slide_XuLyAnh_HAM10000.pdf` | Xong |
 
-**Kết luận chính đến nay:** 0/16 cấu hình 3 seed "tốt hơn rõ" baseline về macro-F1 trên val (`hist_eq_L`, `stretch_L_1_99` tệ hơn rõ trên test), nên pipeline phân loại giữ nguyên baseline, thêm nhánh QC chỉ gắn cờ (2.6).
+**Kết luận chính (đồng bộ 100% trên NVIDIA L40S):** ResNet-18 baseline đạt test macro-F1 `0,6941 ± 0,0160` (`val` `0,7254 ± 0,0044`). 0/16 cấu hình tiền xử lý "tốt hơn rõ" baseline trên `val`; `hist_eq_L` và `stretch_L_1_99` tệ hơn rõ do lệch màu và nhân nhiễu, `hair_bh17` đại trà xóa nhầm sắc tố `mel`. Pipeline đề xuất tách Nhánh (A) QC gắn cờ cảnh báo song song với Nhánh (B) phân loại CNN trên ảnh gốc.
 
 ## 3. Mỗi notebook làm gì
 

@@ -47,17 +47,17 @@ Quy ước tên: tiền tố là số mục kế hoạch; notebook và báo cáo
 
 | Mục | Notebook (gốc repo) | Báo cáo (`reports/`) | Code chính | Trạng thái |
 |---|---|---|---|---|
-| 1 | – | `1_gioi_thieu.md` | – | Có |
+| 1 | – | `1_gioi_thieu.md` | – | Xong |
 | 2.1 | – | `2.1_du_lieu.md` | `src/report/data_tables.py` | Xong |
-| 2.2 EDA | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/` | Xong, còn `TODO` liên hệ lỗi CNN |
+| 2.2 EDA | `2.2_eda_chat_luong_anh.ipynb` | `2.2_eda_chat_luong_anh.md` | `src/eda/` | Xong (kèm liên hệ lỗi CNN) |
 | 2.3 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.3_chuan_bi_du_lieu.md` | `scripts/make_splits.py` | Xong |
-| 2.4 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.4_baseline.md` | `src/training.py` | Xong |
-| 2.5.1 nhiễu, 2.5.2 tương phản | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md` (lượt cũ: `_2.5a_luot_cu.md`); bản giải thích để trình bày: `2.5.1_2.5.2_nhieu_tuong_phan.md`; script nói: `_script_thuyet_trinh_DuyAnh.md` | `src/preprocess/problem_report.py`, `scripts/run_problem_experiments.py`, `scripts/report_noise_contrast.py` | Xong (3 seed), báo cáo đã cập nhật |
-| 2.5b lông, viền, sáng | – | `2.5b_long_vien_sang.md` | `src/preprocess/artifacts.py`, `scripts/run_artifact_experiments.py` | Bản nháp |
-| 2.5.3–2.5.6 lông, sáng không đều, quá sáng, viền tối | `2.5.3_long.ipynb`, `2.5.4_sang_khong_deu.ipynb`, `2.5.5_qua_sang.ipynb`, `2.5.6_vien_toi.ipynb` | – | `src/report/notebook_utils.py`, `scripts/make_problem_notebooks.py`, `src/preprocess/artifacts.py` | Có output 3 seed từ máy RTX 5060 Ti (`outputs/runs_cl/`) |
-| 2.5c tác động 4 tầng | – | – | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Dở |
-| 2.6, 2.7 | – | `2.6_2.7_pipeline.md` | – | Bản nháp |
-| 2.8 | – | `2.8_danh_gia.md` | `scripts/analyze_errors.py`, `app.py` | Code xong, báo cáo bản nháp |
+| 2.4 | `2.3_2.4_du_lieu_baseline.ipynb` | `2.4_baseline.md` | `src/training.py`, `scripts/run_backbone_comparison.py` | Xong (3 kiến trúc CNN × 3 seed) |
+| 2.5.1 nhiễu, 2.5.2 tương phản | `2.5.1_nhieu_gauss.ipynb`, `2.5.2_tuong_phan_thap.ipynb` | `2.5a_nhieu_tuong_phan.md`; bản trình bày: `2.5.1_2.5.2_nhieu_tuong_phan.md`; script nói: `_script_thuyet_trinh_DuyAnh.md` | `src/preprocess/problem_report.py` | Xong (đồng bộ L40S) |
+| 2.5.3–2.5.6 lông, sáng lệch, quá sáng, viền tối | `2.5.3_long.ipynb` – `2.5.6_vien_toi.ipynb` | `2.5b_long_vien_sang.md` | `src/report/notebook_utils.py`, `src/preprocess/artifacts.py` | Xong (đồng bộ L40S) |
+| 2.5c tác động 4 tầng | – | `2.5c_tac_dong_truoc_sau.md` | `src/preprocess/degrade.py`, `scripts/impact_*.py` | Xong (Tầng A–D) |
+| 2.6, 2.7 | – | `2.6_2.7_pipeline.md` | `scripts/collect_all_metrics.py` | Xong |
+| 2.8 | – | `2.8_danh_gia.md` | `scripts/analyze_errors.py`, `app.py` | Xong (Demo 3 tab + phân tích lỗi) |
+| 3 + Overleaf + Slide | – | `3_thao_luan_phan_cong_ai.md`, `overleaf/`, `slides/` | `scripts/build_overleaf_and_slides.py` | Xong (`BaoCao_XuLyAnh_HAM10000.pdf`, `Slide_XuLyAnh_HAM10000.pdf`) |
 
 Khi thêm code mới: ưu tiên tách module/notebook theo vai trò (xử lý ảnh, train, đánh giá) thay vì nhồi vào một notebook; kết quả thí nghiệm lưu vào `outputs/` (CSV/JSON/ảnh) để báo cáo tái tạo được. Thêm file mới thì đặt tên theo quy ước trên và cập nhật bảng này cùng `AGENTS.md`.
 

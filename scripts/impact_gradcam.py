@@ -81,14 +81,37 @@ def compute_cams(model_name, X, y, device, model):
     mean = torch.tensor(IMAGENET_MEAN, device=device).view(1, 3, 1, 1) * 255
     std = torch.tensor(IMAGENET_STD, device=device).view(1, 3, 1, 1) * 255
     for s in SEEDS:
-        model.load_state_dict(torch.load(CKPT_DIR / f"{model_name}_seed{s}.pt", map_location="cpu", weights_only=False)["state_dict"])
+        model.load_state_dict(torch.load(CKPT_DIR / f"{model_name}_seed{s}.pt", map_location="cpu", weights_only=True)["state_dict"])
         model.eval()
         cams = []
-        for i in range(0, len(y), 32):
-            xb = (X[i:i + 32].to(device).float() - mean) / std
-            cams.append(gradcam(model, xb, y[i:i + 32]))
+        for i in range(0, len(y), 16):
+            xb = (X[i:i + 16].to(device).float() - mean) / std
+            cams.append(gradcam(model, xb, y[i:i + 16]))
         out[s] = np.concatenate(cams)
+        torch.cuda.empty_cache()
     return out
+
+
+def _load_subset_224(S: pd.DataFrame, preprocess_fn, cache_key: str) -> torch.Tensor:
+    """Nạp đúng các ảnh trong S (dùng mmap nếu có cache đĩa, tránh đọc trọn 1,5 GB vào RAM)."""
+    from src.training import CACHE_DIR, _load_one, fn_fingerprint
+    npy = CACHE_DIR / f"{cache_key}_224.npy"
+    ids_csv = CACHE_DIR / f"{cache_key}_224_ids.csv"
+    meta_f = CACHE_DIR / f"{cache_key}_224_meta.json"
+    fp = fn_fingerprint(preprocess_fn)
+    if npy.exists() and ids_csv.exists() and meta_f.exists():
+        import json
+        meta = json.loads(meta_f.read_text(encoding="utf-8"))
+        if meta.get("fingerprint") == fp:
+            ids = pd.read_csv(ids_csv)["image_id"].tolist()
+            id_pos = {iid: idx for idx, iid in enumerate(ids)}
+            if S["image_id"].isin(id_pos).all():
+                arr = np.load(npy, mmap_mode="r")
+                idx = [id_pos[i] for i in S["image_id"]]
+                return torch.from_numpy(np.ascontiguousarray(arr[idx]))
+    with ThreadPoolExecutor(12) as ex:
+        data = np.stack(list(ex.map(lambda p: _load_one(p, preprocess_fn), S["path"])))
+    return torch.from_numpy(data)
 
 
 def energy(cam7, R):
@@ -126,13 +149,20 @@ def run(limit):
             with ThreadPoolExecutor(12) as ex:
                 rm = list(ex.map(region_masks, S.path))
             R = {"lesion": np.stack([r[0] for r in rm]), "hair": np.stack([r[1] for r in rm]), "vignette": np.stack([r[2] for r in rm])}
-            y = torch.as_tensor(S.label.values, dtype=torch.long, device=device)
-            sub = {split: S[["image_id", "path"]]}
-            Xb = load_image_cache(sub, None, "baseline", log=lambda *_: None)[split]
-            Xc = load_image_cache(sub, get_preprocess(name), name, log=lambda *_: None)[split]
-            Cb, Cc = compute_cams("baseline", Xb, y, device, model), compute_cams(name, Xc, y, device, model)
-            np.savez_compressed(OUT / "gradcam" / f"{name}_{split}.npz", image_id=S.image_id.values, group=S.group.values,
-                                **{f"b{s}": Cb[s].astype(np.float16) for s in SEEDS}, **{f"c{s}": Cc[s].astype(np.float16) for s in SEEDS})
+            npz_path = OUT / "gradcam" / f"{name}_{split}.npz"
+            if npz_path.exists() and not limit:
+                z = np.load(npz_path, allow_pickle=True)
+                Cb = {s: z[f"b{s}"].astype(np.float32) for s in SEEDS}
+                Cc = {s: z[f"c{s}"].astype(np.float32) for s in SEEDS}
+            else:
+                y = torch.as_tensor(S.label.values, dtype=torch.long, device=device)
+                Xb = _load_subset_224(S, None, "baseline")
+                Xc = _load_subset_224(S, get_preprocess(name), name)
+                Cb, Cc = compute_cams("baseline", Xb, y, device, model), compute_cams(name, Xc, y, device, model)
+                del Xb, Xc
+                torch.cuda.empty_cache()
+                np.savez_compressed(npz_path, image_id=S.image_id.values, group=S.group.values,
+                                    **{f"b{s}": Cb[s].astype(np.float16) for s in SEEDS}, **{f"c{s}": Cc[s].astype(np.float16) for s in SEEDS})
             for cfg, C in (("baseline", Cb), (name, Cc)):
                 for s in SEEDS:
                     E = energy(C[s], R)
@@ -143,6 +173,8 @@ def run(limit):
                 sim.append(pd.DataFrame({"config_pair": name, "split": split, "kind": "config_vs_baseline", "seed_a": a, "seed_b": b, "image_id": S.image_id, "lesion_id": S.lesion_id, "group": S.group, "r": pearson(Cc[a], Cb[b])}))
             for a, b in itertools.combinations(SEEDS, 2):
                 sim.append(pd.DataFrame({"config_pair": name, "split": split, "kind": "floor", "seed_a": a, "seed_b": b, "image_id": S.image_id, "lesion_id": S.lesion_id, "group": S.group, "r": pearson(Cb[a], Cb[b])}))
+            pd.concat(rec, ignore_index=True).to_csv(OUT / "gradcam_per_image.csv", index=False)
+            pd.concat(sim, ignore_index=True).to_csv(OUT / "gradcam_similarity_per_image.csv", index=False)
             print(f"{name} {split}: n={len(S)}", flush=True)
     pd.concat(rec, ignore_index=True).to_csv(OUT / "gradcam_per_image.csv", index=False)
     pd.concat(sim, ignore_index=True).to_csv(OUT / "gradcam_similarity_per_image.csv", index=False)

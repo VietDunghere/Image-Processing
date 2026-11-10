@@ -51,7 +51,7 @@ N_BOOT = 1000
 
 
 def load_state(name, seed):
-    return torch.load(CKPT_DIR / f"{name}_seed{seed}.pt", map_location="cpu", weights_only=False)["state_dict"]
+    return torch.load(CKPT_DIR / f"{name}_seed{seed}.pt", map_location="cpu", weights_only=True)["state_dict"]
 
 
 def build(frame, kind, level, method, jobs):
@@ -82,13 +82,15 @@ def run(subset, jobs):
 
     def infer(name, X, y):
         out = {}
-        bt = GPUBatcher(X, device)
+        bt = GPUBatcher(X, device, pin=False)
         for s in SEEDS:
             if (name, s) not in states:
                 states[(name, s)] = load_state(name, s)
             model.load_state_dict(states[(name, s)])
-            probs, _ = predict(model, bt, y, crit, batch_size=128)
+            probs, _ = predict(model, bt, y, crit, batch_size=32)
             out[s] = probs.argmax(1).astype(np.int8)
+        del bt
+        torch.cuda.empty_cache()
         return out
 
     tag = f"_subset{subset}" if subset else ""

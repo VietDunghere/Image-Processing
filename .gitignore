@@ -9,6 +9,7 @@ data/
 *.zip
 tailieu/
 # Kết quả / checkpoint
+outputs
 outputs/
 checkpoints/
 runs/
@@ -30,3 +31,20 @@ __pycache__/
 .DS_Store
 Thumbs.db
 archive
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.nav
+*.snm
+*.toc
+*.vrb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+overleaf/main.pdf
+slides/slides.pdf
+!overleaf/Overleaf_Upload_HAM10000.zip

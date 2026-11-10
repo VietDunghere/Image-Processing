@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from multiprocessing import Pool
+from multiprocessing import get_context
 from pathlib import Path
 
 import cv2
@@ -119,7 +119,7 @@ def run(jobs, limit):
     if limit:
         sel = sel.groupby(["problem", "group"]).head(limit)
     jobs_a = [(r.image_id, r.lesion_id, r.dx, r.path, r.problem, r.group) for r in sel.itertuples()]
-    with Pool(jobs) as pool:
+    with get_context("spawn").Pool(jobs) as pool:
         res = pool.map(_worker, jobs_a, chunksize=4)
     D = pd.DataFrame([r for rs in res for r in rs])
     D.to_csv(OUT / "image_level_per_image.csv", index=False)
@@ -174,7 +174,7 @@ def hair_lesion(jobs):
     """H-A3: mask lông của hair_bh17 phủ bao nhiêu % vùng tổn thương, theo lớp (toàn bộ train_fit). Một ảnh/lesion khi kiểm định."""
     from scipy.stats import kruskal, mannwhitneyu
     tf = pd.read_csv("outputs/splits/train_fit.csv")
-    with Pool(jobs) as pool:
+    with get_context("spawn").Pool(jobs) as pool:
         res = pool.map(_hair_les, [(r.image_id, r.lesion_id, r.dx, r.path) for r in tf.itertuples()], chunksize=16)
     D = pd.DataFrame(res).dropna(subset=["frac_lesion_inpainted"])
     D.to_csv(OUT / "hair_lesion_per_image.csv", index=False)

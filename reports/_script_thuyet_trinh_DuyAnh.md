@@ -1,5 +1,7 @@
 # Script thuyết trình của Duy Anh
 
+> **Lưu ý đồng bộ (10/11/2026):** Tệp này là bản kịch bản nháp phần riêng của Duy Anh trên nhánh `DuyAnh`. Kịch bản thuyết trình đầy đủ 14 slide cho cả 5 thành viên (đã đồng bộ 100% với bộ slide chính thức `slides/Slide_XuLyAnh_HAM10000.pdf` và số liệu thống nhất trên NVIDIA L40S) nằm tại [`slides/KichBan_ThuyetTrinh_Nhom.md`](../slides/KichBan_ThuyetTrinh_Nhom.md).
+
 Phần trong ngoặc kép là lời nói. Phần *in nghiêng* là thao tác trên slide. Thời lượng ước tính: mở đầu 3 phút, mục 2.1–2.4 khoảng 5 phút, phần của Duy Anh và Dũng 6 phút.
 
 Mọi số trong script có nguồn ở mục "Bảng nguồn số liệu" cuối file.
