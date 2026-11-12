@@ -57,7 +57,7 @@ USER appuser
 EXPOSE 8501
 
 HEALTHCHECK --interval=20s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl --fail --silent http://127.0.0.1:8501/_stcore/health >/dev/null || exit 1
+    CMD sh -c 'p="${STREAMLIT_SERVER_BASE_URL_PATH:+/${STREAMLIT_SERVER_BASE_URL_PATH#/}}"; curl --fail --silent "http://127.0.0.1:8501${p}/_stcore/health" >/dev/null || exit 1'
 
 # Lưu ý: Trong nội bộ container cần lắng nghe trên giao diện mạng container để port-mapping từ 127.0.0.1 của host chuyển tiếp vào;
 # ở phía host (docker-compose.yml / docker run), cổng được khóa chặt vào 127.0.0.1:8501:8501.

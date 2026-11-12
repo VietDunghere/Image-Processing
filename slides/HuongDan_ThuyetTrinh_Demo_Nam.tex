@@ -1,0 +1,187 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\geometry{margin=1.8cm, top=1.8cm, bottom=1.8cm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+\definecolor{ptitred}{RGB}{175, 25, 35}
+\definecolor{darkblue}{RGB}{15, 65, 125}
+\definecolor{darkgreen}{RGB}{20, 110, 60}
+\definecolor{boxbg}{RGB}{246, 248, 252}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=darkblue,
+    urlcolor=darkblue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\footnotesize \textbf{Hướng dẫn Thuyết trình \& Kịch bản Demo -- Nguyễn Trung Nam (B23DCVT299)}}
+\rhead{\footnotesize Học phần: Xử lý ảnh (PTIT)}
+\cfoot{\footnotesize Trang \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries\color{ptitred}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{darkblue}}{\thesubsection}{0.5em}{}
+
+\setlist[itemize]{leftmargin=1.4em, itemsep=2pt, topsep=3pt}
+\setlist[enumerate]{leftmargin=1.5em, itemsep=3pt, topsep=3pt}
+
+\begin{document}
+\sloppy
+
+\begin{center}
+    {\LARGE \bfseries \color{ptitred} HƯỚNG DẪN TRÌNH BÀY \& KỊCH BẢN DEMO TRỰC TIẾP}\\[4pt]
+    {\normalsize \textbf{Phần phụ trách của Nguyễn Trung Nam (\texttt{B23DCVT299}) -- Slide 11 đến Slide 14}}\\[2pt]
+    {\small Đề tài: \emph{Đánh giá tác động của xử lý ảnh cổ điển lên phân loại tổn thương da HAM10000 bằng CNN}}\\
+    {\footnotesize Link Demo trực tuyến: \url{https://tastoria.ctslab.net/xla} \quad|\quad Local Docker: \url{http://127.0.0.1:8501}}
+\end{center}
+\vspace{-4pt}
+
+% ======================================================================
+\section{Tóm tắt dễ hiểu: Phần việc của Nam trong nhóm là gì?}
+
+Nếu thầy/cô hỏi \emph{``Trong đồ án này em trực tiếp làm những gì?''}, bạn trả lời ngắn gọn theo \textbf{4 ý cốt lõi} sau:
+
+\begin{enumerate}
+    \item \textbf{Chạy thống nhất toàn bộ thí nghiệm trên một GPU chuẩn (NVIDIA L40S):}
+    Trước đó các bạn trong nhóm chạy thử trên các máy cá nhân khác nhau nên điểm chuẩn (\emph{baseline}) bị lệch. Nam là người gom toàn bộ code về một mối, chạy lại đồng bộ \textbf{17 cấu hình $\times$ 3 seed = 51 lượt huấn luyện ResNet-18} trên cùng một phần cứng để mọi con số so sánh hoàn toàn công bằng.
+    \item \textbf{Khảo sát 3 kiến trúc mạng CNN (mục 2.4):}
+    Huấn luyện và so sánh \texttt{ResNet-18}, \texttt{EfficientNet-B0} và \texttt{MobileNetV3-Small} để chứng minh lý do nhóm chọn \texttt{ResNet-18} làm mô hình chính (ổn định nhất giữa các lần chạy trên tập \texttt{val} và lấy được bản đồ nhiệt \texttt{layer4} $7\times 7$ rõ ràng).
+    \item \textbf{Hoàn thiện phân tích 4 tầng (mục 2.5c) \& Xây dựng Web Demo + Docker (\texttt{app.py}):}
+    Tổng hợp bằng chứng 4 tầng (ảnh, đổi nhãn, giả lập suy giảm nặng \emph{Stress Test}, và bản đồ chú ý \emph{Grad-CAM}); viết giao diện Web 3 tab bằng \textbf{Streamlit} chạy hoàn toàn trên RAM và đóng gói \textbf{Docker} an toàn để chạy thực tế.
+    \item \textbf{Tự động hóa xuất Báo cáo Overleaf PDF \& Slide Beamer PDF:}
+    Viết script trích trực tiếp số từ file kết quả CSV sang bảng biểu LaTeX để đảm bảo 0\% sai số thủ công.
+\end{enumerate}
+
+% ======================================================================
+\section{Giải thích nhanh các thuật ngữ dễ bị hỏi (Bằng ngôn ngữ bình dân)}
+
+\noindent\begin{tabularx}{\textwidth}{>{\bfseries\raggedright\arraybackslash}p{3.8cm} X}
+\toprule
+Thuật ngữ trên Slide & Cách hiểu \& giải thích ngắn gọn (1--2 câu) \\
+\midrule
+Macro-F1 vs Accuracy & Tập ảnh bị lệch nặng (67\% là nốt ruồi lành tính \texttt{nv}). Đoán bừa tất cả là \texttt{nv} cũng được Accuracy 66,9\%, nên phải dùng \textbf{Macro-F1} (trung bình đều 7 bệnh, coi bệnh hiếm quan trọng ngang bệnh phổ biến). \\
+\addlinespace[3pt]
+Xử lý đại trà vs Có điều kiện (\texttt{\_cond}) & \textbf{Đại trà} là ảnh nào vào cũng sửa (làm hỏng 90\% ảnh đang đẹp). \textbf{Có điều kiện (\texttt{\_cond})} là đo trước: chỉ ảnh nào vượt ngưỡng lỗi mới sửa, ảnh bình thường giữ nguyên 100\% từng pixel. \\
+\addlinespace[3pt]
+Nhánh (A) QC là gì? & \textbf{QC (Quality Control)} là cổng kiểm tra chất lượng ảnh bằng các thuật toán cổ điển (đo viền đen, độ lóa, mật độ lông, độ lệch sáng\dots) để \textbf{gắn cờ cảnh báo} cho người dùng biết ảnh đầu vào có đáng tin cậy hay không. \\
+\addlinespace[3pt]
+Chuẩn hóa lỗi theo thành phần lớp (Slide 12) & Một nhóm ảnh bị cờ (ví dụ \emph{có lông}) hay bị đoán sai có thể chỉ vì nhóm đó chứa nhiều ca u hắc tố \texttt{mel} (vốn là bệnh khó đoán). Nhóm tính \textbf{lỗi kỳ vọng theo tỷ lệ bệnh} rồi mới trừ đi để biết lỗi đó thực sự do chất lượng ảnh hay do loại bệnh. \\
+\addlinespace[3pt]
+Grad-CAM \texttt{layer4} & Là ``bản đồ nhiệt vùng chú ý'' trích từ tầng tích chập cuối (\texttt{layer4}, kích thước $7\times 7$) của ResNet-18: vùng màu đỏ/vàng cho biết mạng CNN đang nhìn vào đâu trên ảnh để đưa ra kết luận. \\
+\addlinespace[3pt]
+Streamlit là gì? & Thư viện Python giúp biến code xử lý ảnh và mô hình PyTorch thành trang Web tương tác trực tiếp (có nút bấm, thanh trượt, biểu đồ) mà không cần viết giao diện HTML/JS phức tạp. \\
+\bottomrule
+\end{tabularx}
+
+% ======================================================================
+\section{Kịch bản lời nói chi tiết cho Phần 3 của Nam (Slide 11 $\rightarrow$ Slide 14)}
+
+\noindent\emph{Bối cảnh chuyển giao: Sau khi Sơn và Ngọc trình bày xong Slide 10 (Giải mã 4 tầng 2.5c), Nam tiếp lời từ Slide 11. Thời lượng nói lý thuyết: $\approx 3$ phút + Demo: $\approx 1{,}5\text{--}2$ phút.}
+
+\subsection*{Slide 11: Pipeline Đề xuất Hai Nhánh \& Đóng băng Mô hình Cuối ($\approx 45$ giây)}
+\begin{itemize}
+    \item \textbf{Ý cốt lõi:} Không ép ảnh qua bộ lọc cố định trước khi vào CNN, mà tách thành \textbf{2 nhánh song song}: Nhánh (A) Kiểm tra chất lượng gắn cờ cảnh báo + Nhánh (B) Phân loại bằng ResNet-18 trên ảnh gốc.
+    \item \textbf{Lời trình bày gợi ý:}
+    \begin{quote}
+    \emph{``Tiếp nối phần phân tích của bạn Ngọc, em xin trình bày mục 2.6 đến phần kết luận và Demo hệ thống. Từ thực nghiệm 16 cấu hình vừa rồi, câu hỏi thực tế nhất là: \textbf{Vậy khi ghép thành hệ thống hoàn chỉnh, ta nên đặt các thuật toán xử lý ảnh Chương 3--7 ở đâu?}\\
+    Nếu ta cứ ép mọi bức ảnh đi qua một chuỗi lọc cố định rồi mới đưa vào CNN thì trên dữ liệu thật không những không tăng Macro-F1 mà còn có nguy cơ làm phai màu hoặc xóa nhầm sắc tố của u hắc tố \texttt{mel}.\\
+    Vì vậy, nhóm đề xuất kiến trúc \textbf{Pipeline 2 nhánh song song}:\\
+    -- \textbf{Nhánh (A) Kiểm tra chất lượng (QC):} Dùng 6 bộ đo cổ điển (viền tối, quá sáng, lông, sáng lệch, nhiễu, tương phản thấp) làm cổng gác để \textbf{gắn cờ cảnh báo độ tin cậy}, và chỉ bật các bước xử lý có điều kiện (\texttt{vig\_fill}, \texttt{flat\_cond}) khi người dùng cần đối chiếu trực quan.\\
+    -- \textbf{Nhánh (B) Phân loại chính:} Đưa ảnh gốc qua chuẩn hóa kích thước $224\times 224$ vào mô hình \textbf{ResNet-18} đóng băng để dự đoán xác suất 7 bệnh kèm bản đồ giải thích Grad-CAM.''}
+    \end{quote}
+\end{itemize}
+
+\subsection*{Slide 12: Phân tích Lỗi Chuyên sâu của Mô hình Cuối ($\approx 50$ giây)}
+\begin{itemize}
+    \item \textbf{Ý cốt lõi:} Chỉ ra cặp bệnh dễ nhầm nhất (\texttt{mel} $\leftrightarrow$ \texttt{nv}) và chứng minh bằng thống kê rằng cờ \emph{sáng không đều} thực sự làm CNN tăng lỗi -- đó chính là lý do cần Nhánh (A) QC.
+    \item \textbf{Lời trình bày gợi ý:}
+    \begin{quote}
+    \emph{``Sang Slide 12, nhóm phân tích sâu xem mô hình cuối ResNet-18 (đạt Test Macro-F1 $0{,}6941 \pm 0{,}0160$) thường sai ở đâu qua 3 seed:\\
+    -- \textbf{Thứ nhất, nhìn vào ma trận nhầm lẫn bên trái:} Cặp nhầm lớn nhất là u hắc tố ác tính \texttt{mel} bị đoán nhầm sang nốt ruồi lành tính \texttt{nv} ($31{,}1\%$, trung bình $69/222$ ảnh test), vì sau khi thu nhỏ về $224\times 224$, các ca \texttt{mel} giai đoạn sớm có màu nâu đen rất giống \texttt{nv}. Toàn tập test có khoảng $8\%$ số ảnh bị cả 3 seed đoán sai nhất quán -- đây là các ca hình thái không điển hình.\\
+    -- \textbf{Thứ hai, nhìn vào biểu đồ bên phải:} Khi nhóm loại bỏ yếu tố lệch tỷ lệ bệnh giữa các nhóm cờ, nhóm phát hiện ảnh bị \textbf{sáng không đều} có tỷ lệ lỗi cao hơn kỳ vọng tới $+13{,}0\%$ (khoảng tin cậy 95\% hoàn toàn dương), và nhóm \textbf{quá sáng} cao hơn $+7{,}4\%$. Ngược lại, cờ \textbf{nhiễu Gauss} có lỗi thấp hơn kỳ vọng ($-5{,}9\%$) vì rơi vào lô ảnh tái khám \texttt{follow\_up} của lớp \texttt{nv} vốn rất dễ đoán. Kết quả này khẳng định việc dùng Nhánh (A) để cảnh báo khi ảnh bị sáng lệch hoặc lóa sáng là hoàn toàn có cơ sở thực nghiệm.''}
+    \end{quote}
+\end{itemize}
+
+\subsection*{Slide 13: Giới thiệu Kiến trúc Demo 3 Tab \& Chuyển sang Demo ($\approx 25$ giây)}
+\begin{itemize}
+    \item \textbf{Lời trình bày gợi ý:}
+    \begin{quote}
+    \emph{``Để hiện thực hóa toàn bộ pipeline 2 nhánh này, nhóm đã xây dựng ứng dụng tương tác trên Streamlit gồm 3 Tab, chạy trực tiếp trong bộ nhớ RAM và đóng gói bằng Docker container bảo mật. Em xin phép chuyển sang màn hình trình duyệt để demo trực tiếp trên hệ thống đang chạy thực tế ạ.''}
+    \end{quote}
+\end{itemize}
+
+\newpage
+% ======================================================================
+\section{Kịch bản Demo Ngắn gọn trên Trình duyệt ($\approx 90\text{--}120$ giây)}
+
+\noindent\textbf{Chuẩn bị trước khi lên bảng:} Mở sẵn tab trình duyệt tại \url{https://tastoria.ctslab.net/xla} (hoặc \url{http://127.0.0.1:8501}). Mặc định ứng dụng đã chọn sẵn ảnh mẫu đầu tiên, sẵn sàng thao tác ngay không cần chờ tải file.
+
+\vspace{4pt}
+\noindent\begin{tabularx}{\textwidth}{>{\bfseries\raggedright\arraybackslash}p{2.5cm} >{\raggedright\arraybackslash}p{4.6cm} X}
+\toprule
+Bước \& Thời gian & Thao tác bấm trên màn hình & Hiện tượng hiển thị \& Lời thuyết minh ngắn \\
+\midrule
+\textbf{Bước 1 (30s):}\newline Minh họa Pipeline 2 nhánh &
+1. Ở cột trái mục \textbf{1. Nguồn ảnh đầu vào}, chọn ảnh mẫu:\newline \texttt{mel\_ISIC\_0033023.jpg}.\newline
+2. Giữ nguyên cấu hình mẫu mặc định (\texttt{vig\_fill $\rightarrow$ flat\_L\_s60\_cond}).\newline
+3. Nhìn vào \textbf{Tab 1}. &
+-- \textbf{Màn hình:} Bảng QC báo \textbf{2/6 cờ vượt ngưỡng} (\emph{Quá sáng}: $0{,}150 > 0{,}10$; \emph{Lông che phủ}: $0{,}0969 > 0{,}0582$). Bên dưới, ResNet-18 dự đoán chính xác nhãn thật \textbf{\texttt{mel} (100\%)}. Đặc biệt, ảnh sau bước minh họa có $\Delta E_{76} = 0{,}00$ (giữ nguyên 100\% pixel).\newline
+-- \textbf{Lời nói:} \emph{``Đây là một ca u hắc tố \texttt{mel} trong tập Test. Nhánh (A) QC lập tức phát hiện 2 cờ cảnh báo là lóa sáng và có lông. Tuy nhiên, vì ta đang bật preset xử lý có điều kiện cho viền tối và sáng lệch mà bức ảnh này không bị 2 lỗi đó, nên hệ thống giữ nguyên 100\% pixel ($\Delta E_{76}=0$), không làm hỏng ảnh. Nhánh (B) ResNet-18 dự đoán đúng \texttt{mel} 100\%.''} \\
+\midrule
+\textbf{Bước 2 (45s):}\newline Minh họa Stress Test 2.5c \& Xóa lông có điều kiện &
+1. Vẫn giữ ảnh \texttt{mel\_ISIC\_0033023.jpg}.\newline
+2. Ở cột trái mục \textbf{2. Chuỗi tiền xử lý}, đổi sang preset:\newline \emph{``Xóa lông có điều kiện: \texttt{hair\_bh17\_cond}''}.\newline
+3. Ở mục \textbf{3. Mô phỏng suy giảm (2.5c)}, chọn \emph{``Sợi lông giả lập (hair)''} và kéo thanh trượt lên \textbf{Mức 3 (80 sợi)}.\newline
+4. Chỉ vào biểu đồ dự đoán ở \textbf{Tab 1}, rồi bấm sang \textbf{Tab 2}. &
+-- \textbf{Màn hình Tab 1:} Khi bị 80 sợi lông che phủ, dự đoán trên ảnh chưa xử lý bị \textbf{đoán sai từ \texttt{mel} sang nốt ruồi lành tính \texttt{nv} (62,3\%)}! Nhưng ngay bên cạnh, sau khi đi qua \texttt{hair\_bh17\_cond} (Black-hat $17\times 17$ + Telea inpainting), mô hình \textbf{khôi phục lại dự đoán đúng \texttt{mel} (100\%)}!\newline
+-- \textbf{Màn hình Tab 2:} Hiện rõ chuỗi ảnh trước/sau, mask lông màu đỏ (Chương 7), bản đồ nhiệt vị trí pixel vừa được khôi phục và histogram mức xám.\newline
+-- \textbf{Lời nói:} \emph{``Bây giờ em bật thử Stress Test mức 3 giả lập 80 sợi lông che dày đặc. Thầy/cô thấy trên ảnh chưa xử lý, mạng CNN bị sợi lông đánh lừa và đoán nhầm ung thư \texttt{mel} thành nốt ruồi lành tính \texttt{nv} (62,3\%). Nhưng nhờ bước xóa lông có điều kiện \texttt{hair\_bh17\_cond}, các sợi lông bị tách bằng phép hình thái học Black-hat (vùng màu đỏ ở Tab 2) và khôi phục lại nền da, giúp mô hình lập tức nhận diện đúng lại \texttt{mel} 100\%. Đây chính là bằng chứng trực quan cho kết quả Tầng C ở mục 2.5c.''} \\
+\midrule
+\textbf{Bước 3 (25s):}\newline Giải thích vùng chú ý Grad-CAM (\textbf{Tab 3}) &
+1. Bấm sang \textbf{Tab 3: Giải thích Grad-CAM \& Tổng hợp Thực nghiệm}. &
+-- \textbf{Màn hình Tab 3:} Hiển thị bản đồ nhiệt Grad-CAM \texttt{layer4} trước và sau khi xóa lông, tỷ lệ \% năng lượng chú ý rơi vào vùng tổn thương so với vùng lông, và bảng tổng hợp 16 cấu hình 3 seed ở dưới cùng.\newline
+-- \textbf{Lời nói:} \emph{``Ở Tab 3, bản đồ nhiệt Grad-CAM tại tầng \texttt{layer4} cho thấy sau khi khử lớp lông che phủ, vùng chú ý màu đỏ của mạng tập trung gọn vào đúng nhân tổn thương thay vì bị phân tán theo các sợi lông ở ngoại vi.''} \\
+\bottomrule
+\end{tabularx}
+
+% ======================================================================
+\subsection*{Quay lại Slide 14: Kết luận, Hạn chế \& Khai báo AI ($\approx 30$ giây chốt bài)}
+\begin{itemize}
+    \item \textbf{Lời trình bày chốt bài:}
+    \begin{quote}
+    \emph{``Quay lại Slide cuối cùng (Slide 14), đồ án của nhóm rút ra thông điệp cốt lõi từ 51 lượt huấn luyện ResNet-18 và khảo sát 3 kiến trúc CNN: Với mạng học sâu đã fine-tune toàn bộ trên ảnh soi da chuẩn, việc áp dụng máy móc các bộ lọc hay cân bằng sáng toàn cục sẽ gây hại nhiều hơn lợi; giá trị thực sự của xử lý ảnh cổ điển Chương 3--7 nằm ở \textbf{kiểm soát chất lượng (QC)}, \textbf{can thiệp có điều kiện theo cờ} và \textbf{khôi phục khi ảnh suy giảm nặng}.\\
+    Nhóm cũng nêu rõ các hạn chế phương pháp luận (như chỉ dùng 1 phép chia split $\times$ 3 seed, mặt nạ Otsu và Black-hat còn thô với rìa tối hoặc lông bạc) cùng bảng phân công và khai báo minh bạch việc sử dụng AI hỗ trợ. Phần trình bày của nhóm chúng em đến đây là hết, em xin cảm ơn thầy/cô và các bạn đã lắng nghe ạ!''}
+    \end{quote}
+\end{itemize}
+
+% ======================================================================
+\section{Cẩm nang trả lời nhanh 4 câu hỏi phản biện dễ gặp nhất}
+
+\begin{enumerate}
+    \item \textbf{Câu hỏi 1: ``Tại sao cả 16 cấu hình tiền xử lý đều không làm tăng Macro-F1 trên tập Validation/Test gốc? Vậy xử lý ảnh cổ điển có vô ích không?''}\\
+    $\rightarrow$ \textbf{Trả lời:} Dạ không hề vô ích ạ. Có 2 lý do khiến F1 toàn tập không tăng trên ảnh gốc: (1) Mạng ResNet-18 có các tầng chuẩn hóa lô (\texttt{BatchNorm}) và 11,18 triệu tham số được huấn luyện lại toàn bộ trên 6.408 ảnh nên tự thích nghi được với độ lệch sáng nhẹ, đồng thời bước thu nhỏ ảnh từ $600\times 450$ về $224\times 224$ đã tự khử nhiễu mịn; (2) Mỗi lỗi chất lượng trong HAM10000 chỉ chiếm từ $2{,}5\%$ đến $10\%$ số ảnh, nên nếu áp đại trà sẽ làm biến dạng màu của hơn $90\%$ ảnh bình thường. Tuy nhiên, xử lý ảnh cổ điển phát huy tác dụng cực kỳ rõ ở \textbf{Nhánh QC gắn cờ cảnh báo} và \textbf{khôi phục hiệu năng tới $+0{,}10\text{--}0{,}46$ F1 trong Stress Test khi ảnh bị suy giảm ngoại lai nặng}.
+
+    \item \textbf{Câu hỏi 2: ``Tại sao ở Slide 6 tập Val thì EfficientNet-B0 ($0{,}7333$) nhỉnh hơn ResNet-18 ($0{,}7254$) một chút mà nhóm vẫn chọn ResNet-18?''}\\
+    $\rightarrow$ \textbf{Trả lời:} Dạ nhóm chọn dựa trên 3 căn cứ khoa học trên tập \texttt{val}: (1) Khoảng tin cậy 95\% của chênh lệch giữa hai mạng chứa số 0 ($[-0{,}0182; +0{,}0337]$) nên không khác biệt có ý nghĩa thống kê; (2) \textbf{Độ lệch chuẩn giữa 3 seed của ResNet-18 chỉ là $0{,}0044$, thấp hơn 3,3 lần so với $0{,}0146$ của EfficientNet-B0}, giúp mốc đối chứng ổn định hơn rất nhiều khi đo các biến thiên nhỏ ở mục 2.5; và (3) Tầng tích chập cuối \texttt{layer4} ($7\times 7$) của ResNet-18 tường minh cho phân tích Grad-CAM. Thực tế khi kiểm tra độc lập trên tập \texttt{test}, ResNet-18 cũng đạt điểm trung bình cao hơn ($0{,}6941$ so với $0{,}6732$).
+
+    \item \textbf{Câu hỏi 3: ``Vì sao xóa lông đại trà (\texttt{hair\_bh17}) lại làm giảm điểm của bệnh u hắc tố \texttt{mel}?''}\\
+    $\rightarrow$ \textbf{Trả lời:} Dạ vì toán tử hình thái học \textbf{Black-hat $17\times 17$} tìm các cấu trúc tối và mảnh hơn phần tử cấu trúc. Trên ảnh u hắc tố (\texttt{mel}), các vân mạng lưới sắc tố không điển hình bên trong khối u cũng là các nét tối mảnh, nên bị Black-hat nhận nhầm là sợi lông và dùng thuật toán Telea xóa mờ đi. Nhóm đã đo định lượng ở Tầng A: trên lớp \texttt{mel}, trung vị tới \textbf{8,9\% diện tích vùng tổn thương bị xóa nhầm} (cao gấp 3,5 lần so với 2,5\% ở nốt ruồi \texttt{nv}, $p = 3{,}7\times 10^{-56}$), làm mạng CNN mất dấu hiệu ác tính và đoán nhầm sang \texttt{nv}.
+
+    \item \textbf{Câu hỏi 4: ``Vì sao nhóm dùng \texttt{WeightedRandomSampler} (WRS) mà không truyền thêm \texttt{class\_weight} vào hàm \texttt{CrossEntropyLoss}?''}\\
+    $\rightarrow$ \textbf{Trả lời:} Dạ vì \texttt{WeightedRandomSampler} đã cân bằng tần suất xuất hiện của cả 7 lớp về mức kỳ vọng $\approx 14{,}29\%$ trong mỗi epoch huấn luyện rồi. Nếu vừa lấy mẫu lặp lại lớp hiếm bằng WRS mà vừa nhân thêm trọng số lớp vào hàm Loss thì sẽ bị \textbf{bù khống 2 lần (double-compensation)}, làm gradient của các lớp cực hiếm như \texttt{df} (chỉ có 73 ảnh train, vốn đã được lặp 12,6 lần/epoch) bị phóng đại quá mức và gây overfit rất nhanh.
+\end{enumerate}
+
+\end{document}

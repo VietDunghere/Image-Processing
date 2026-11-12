@@ -1,7 +1,8 @@
-# Môi trường ảo
+# Môi trường ảo & biến môi trường cục bộ
 .venv/
 venv/
 env/
+.env
 
 # Dữ liệu (nặng, tải lại từ Kaggle)
 archive/
